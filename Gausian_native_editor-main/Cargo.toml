@@ -1,0 +1,27 @@
+[workspace]
+members = [
+  "crates/timeline",
+  "crates/project",
+  "crates/media-io",
+  "crates/renderer",
+  "crates/exporters",
+  "crates/jobs",
+  "crates/plugin-host",
+  "crates/native-decoder",
+  "crates/cli",
+  "apps/desktop",
+  "apps/comfywebview",
+]
+
+resolver = "2"
+
+[profile.dev]
+# Reduce macOS file explosion and disk usage.
+split-debuginfo = "packed"
+# Disable incremental to avoid large per-crate caches in target/.
+incremental = false
+
+[profile.release]
+# Keep release lean; ensure no debug info and packed split if any.
+debug = 0
+split-debuginfo = "packed"
