@@ -10,6 +10,7 @@ winit = { version = "0.30" }
 egui = "0.29"
 eframe = { version = "0.29", default-features = false, features = ["wgpu"] }
 egui_extras = { version = "0.29", features = ["default"] }
+egui_plot = "0.29"
 rfd = "0.15"
 uuid = { version = "1", features = ["v4", "serde"] }
 image = "0.25"
