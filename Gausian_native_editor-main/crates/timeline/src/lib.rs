@@ -9,6 +9,10 @@ mod markers;
 pub use markers::*;
 mod automation;
 pub use automation::*;
+mod edit_operations;
+pub use edit_operations::*;
+mod timecode;
+pub use timecode::*;
 
 #[derive(Debug, Error)]
 pub enum TimelineError {
