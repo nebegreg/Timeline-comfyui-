@@ -203,7 +203,7 @@ impl Effect for LutEffect {
     }
 
     fn apply(
-        &self,
+        &mut self,
         input: &wgpu::Texture,
         output: &wgpu::Texture,
         params: &HashMap<String, f32>,

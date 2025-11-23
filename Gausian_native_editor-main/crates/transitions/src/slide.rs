@@ -116,7 +116,7 @@ impl SlideTransition {
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleStrip,
-                ..Default::default(),
+                ..Default::default()
             },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
@@ -155,7 +155,7 @@ impl Transition for SlideTransition {
     }
 
     fn render(
-        &self,
+        &mut self,
         from_frame: &wgpu::Texture,
         to_frame: &wgpu::Texture,
         progress: f32,
@@ -185,7 +185,7 @@ impl Transition for SlideTransition {
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
-            ..Default::default(),
+            ..Default::default()
         });
 
         let from_view = from_frame.create_view(&wgpu::TextureViewDescriptor::default());

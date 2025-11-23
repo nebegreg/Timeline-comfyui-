@@ -163,13 +163,13 @@ impl CornerPinEffect {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: Some("vs_main"),
+                entry_point: "vs_main",
                 buffers: &[],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fs_main"),
+                entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Rgba8Unorm,
                     blend: None,
@@ -280,18 +280,14 @@ impl Effect for CornerPinEffect {
     }
 
     fn apply(
-        &self,
+        &mut self,
         input: &wgpu::Texture,
         output: &wgpu::Texture,
         params: &HashMap<String, f32>,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut effect = self;
-        let mut_effect = unsafe {
-            &mut *(effect as *const Self as *mut Self)
-        };
-        mut_effect.init_if_needed(device);
+        self.init_if_needed(device);
 
         // Get corner positions (convert from percentage to normalized 0-1)
         let tl = [

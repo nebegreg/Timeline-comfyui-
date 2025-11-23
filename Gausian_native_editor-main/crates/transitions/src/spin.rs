@@ -119,13 +119,13 @@ impl SpinTransition {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: Some("vs_main"),
+                entry_point: "vs_main",
                 buffers: &[],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fs_main"),
+                entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Rgba8Unorm,
                     blend: None,
@@ -147,8 +147,12 @@ impl Transition for SpinTransition {
         "spin"
     }
 
+    fn category(&self) -> crate::TransitionCategory {
+        crate::TransitionCategory::Rotate
+    }
+
     fn render(
-        &self,
+        &mut self,
         from_frame: &wgpu::Texture,
         to_frame: &wgpu::Texture,
         progress: f32,
@@ -156,11 +160,7 @@ impl Transition for SpinTransition {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut transition = self;
-        let mut_transition = unsafe {
-            &mut *(transition as *const Self as *mut Self)
-        };
-        mut_transition.init_if_needed(device);
+        self.init_if_needed(device);
 
         // Build uniforms
         let uniforms = SpinUniforms {

@@ -140,7 +140,7 @@ impl Transition for DissolveTransition {
     }
 
     fn render(
-        &self,
+        &mut self,
         from_frame: &wgpu::Texture,
         to_frame: &wgpu::Texture,
         progress: f32,

@@ -19,7 +19,7 @@ pub trait Effect: Send + Sync {
 
     /// Apply effect to texture
     fn apply(
-        &self,
+        &mut self,
         input: &wgpu::Texture,
         output: &wgpu::Texture,
         params: &HashMap<String, f32>,
