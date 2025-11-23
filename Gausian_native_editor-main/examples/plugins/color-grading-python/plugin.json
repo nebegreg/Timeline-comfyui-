@@ -1,0 +1,55 @@
+{
+  "name": "Color Grading Suite",
+  "version": "1.0.0",
+  "author": "Gausian Team",
+  "description": "Professional color grading with lift/gamma/gain controls",
+  "plugin_type": "ColorCorrection",
+  "runtime": "Python",
+  "entry_point": "color_grading.py",
+  "capabilities": ["ProcessVideo"],
+  "parameters": [
+    {
+      "name": "lift_r",
+      "display_name": "Lift Red",
+      "param_type": "Float",
+      "default_value": 0.0,
+      "min_value": -1.0,
+      "max_value": 1.0,
+      "description": "Lift (shadows) adjustment for red channel",
+      "group": "Lift"
+    },
+    {
+      "name": "gamma_g",
+      "display_name": "Gamma Green",
+      "param_type": "Float",
+      "default_value": 1.0,
+      "min_value": 0.1,
+      "max_value": 5.0,
+      "description": "Gamma (midtones) adjustment for green channel",
+      "group": "Gamma"
+    },
+    {
+      "name": "gain_b",
+      "display_name": "Gain Blue",
+      "param_type": "Float",
+      "default_value": 1.0,
+      "min_value": 0.0,
+      "max_value": 4.0,
+      "description": "Gain (highlights) adjustment for blue channel",
+      "group": "Gain"
+    },
+    {
+      "name": "saturation",
+      "display_name": "Saturation",
+      "param_type": "Float",
+      "default_value": 1.0,
+      "min_value": 0.0,
+      "max_value": 2.0,
+      "description": "Overall saturation multiplier",
+      "group": null
+    }
+  ],
+  "signature": null,
+  "dependencies": [],
+  "minimum_host_version": "0.1.0"
+}

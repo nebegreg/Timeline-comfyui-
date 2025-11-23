@@ -1,0 +1,16 @@
+[package]
+name = "simple-effect-wasm"
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Add your dependencies here if needed
+
+[profile.release]
+lto = true
+opt-level = "s"  # Optimize for size
+panic = "abort"
+strip = true

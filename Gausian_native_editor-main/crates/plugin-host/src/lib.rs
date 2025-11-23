@@ -12,6 +12,7 @@ use wasmtime::*;
 
 pub mod marketplace;
 pub mod python_bridge;
+pub mod signatures;
 pub mod wasm_runtime;
 
 #[derive(Debug, Error)]
@@ -380,33 +381,59 @@ impl PluginHost {
 
     fn validate_plugin_signature(
         &self,
-        _manifest: &PluginManifest,
-        _plugin_dir: &Path,
+        manifest: &PluginManifest,
+        plugin_dir: &Path,
     ) -> Result<()> {
-        // TODO: Implement plugin signature validation
-        // For now, just return Ok if signature validation is required but not implemented
-        tracing::warn!("Plugin signature validation not yet implemented");
+        // Check if manifest has a signature
+        let signature_str = manifest
+            .signature
+            .as_ref()
+            .ok_or_else(|| PluginError::SecurityViolation("Plugin has no signature".to_string()))?;
+
+        // Parse signature from JSON
+        let signature: signatures::PluginSignature = serde_json::from_str(signature_str)
+            .map_err(|e| PluginError::SecurityViolation(format!("Invalid signature format: {}", e)))?;
+
+        // Create signature verifier
+        let verifier = signatures::SignatureVerifier::new();
+
+        // Verify signature (blocking operation, but runs rarely during plugin load)
+        let plugin_dir = plugin_dir.to_path_buf();
+        let is_valid = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                verifier.verify_plugin(&plugin_dir, &signature).await
+            })
+        })?;
+
+        if !is_valid {
+            return Err(PluginError::SecurityViolation(format!(
+                "Plugin signature verification failed for {}",
+                manifest.name
+            ))
+            .into());
+        }
+
+        tracing::info!("Plugin signature verified: {} by {}", manifest.name, signature.signer);
         Ok(())
     }
 
     async fn execute_wasm_plugin(
         &self,
-        _module: &Module,
+        module: &Module,
         _manifest: &PluginManifest,
-        _context: PluginContext,
+        context: PluginContext,
     ) -> Result<PluginResult> {
-        // TODO: Implement WASM plugin execution
-        // This would involve creating a WASM instance, setting up WASI, and calling the plugin
-        tracing::warn!("WASM plugin execution not yet fully implemented");
+        // Create WASM runtime with resource limits
+        let wasm_runtime = wasm_runtime::WasmRuntime::new(self.resource_limits.clone())?;
 
-        Ok(PluginResult {
-            success: true,
-            output_items: vec![],
-            modified_sequence: None,
-            artifacts: vec![],
-            logs: vec!["WASM plugin executed (stub)".to_string()],
-            error_message: None,
+        // Execute the plugin in a blocking task (WASM execution is CPU-bound)
+        let module = module.clone();
+        let result = tokio::task::spawn_blocking(move || {
+            wasm_runtime.execute_plugin(&module, context)
         })
+        .await??;
+
+        Ok(result)
     }
 }
 
