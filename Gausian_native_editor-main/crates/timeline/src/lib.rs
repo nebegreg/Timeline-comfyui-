@@ -5,6 +5,8 @@ mod graph;
 pub use graph::*;
 mod commands;
 pub use commands::*;
+mod markers;
+pub use markers::*;
 
 #[derive(Debug, Error)]
 pub enum TimelineError {
