@@ -138,8 +138,12 @@ pub mod easing {
 pub mod dissolve;
 pub mod wipe;
 pub mod slide;
+pub mod zoom;
+pub mod spin;
 
 // Re-exports
 pub use dissolve::DissolveTransition;
 pub use wipe::WipeTransition;
 pub use slide::SlideTransition;
+pub use zoom::ZoomTransition;
+pub use spin::SpinTransition;
