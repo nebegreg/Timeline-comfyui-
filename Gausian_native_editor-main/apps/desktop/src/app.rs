@@ -7,6 +7,11 @@ mod app_storyboard;
 mod app_timeline;
 mod app_ui;
 
+// Phase 1: Timeline Polish & UX
+use crate::selection::SelectionState;
+use crate::edit_modes::{EditMode, SnapSettings};
+use crate::keyboard::{KeyCommand, PlaybackSpeed};
+
 use crate::cache::job::{CacheEvent, CacheJobId, CacheJobSpec, PreferredCodec};
 use crate::cache::CacheManager;
 use crate::media_info::{HardwareCaps, MediaInfo as MediaInfoData, MediaKind};
@@ -1515,6 +1520,28 @@ struct App {
     assets_drop_rect: Option<egui::Rect>,
     timeline_drop_rect: Option<egui::Rect>,
     pending_timeline_drops: Vec<PendingTimelineDrop>,
+
+    // ═══════════════════════════════════════════════════════════
+    // Phase 1: Timeline Polish & UX Improvements
+    // ═══════════════════════════════════════════════════════════
+
+    /// Multi-clip selection state
+    selection: SelectionState,
+
+    /// Current edit mode (Normal, Ripple, Roll, Slide, Slip)
+    edit_mode: EditMode,
+
+    /// Snapping settings
+    snap_settings: SnapSettings,
+
+    /// Markers and regions
+    markers: timeline::MarkerCollection,
+
+    /// Playback speed for J/K/L control
+    playback_speed: PlaybackSpeed,
+
+    /// Rectangle selection state (for drag selection)
+    rect_selection: Option<crate::selection::RectSelection>,
 }
 
 struct PendingTimelineDrop {
@@ -5540,6 +5567,14 @@ Use one of the keys listed above. Populate the \"inputs\" object with values for
             assets_drop_rect: None,
             timeline_drop_rect: None,
             pending_timeline_drops: Vec::new(),
+
+            // Phase 1: Timeline Polish & UX
+            selection: SelectionState::new(),
+            edit_mode: EditMode::default(),
+            snap_settings: SnapSettings::default(),
+            markers: timeline::MarkerCollection::new(),
+            playback_speed: PlaybackSpeed::default(),
+            rect_selection: None,
         };
         let (chat_tx, chat_rx) = unbounded();
         app.chat_event_tx = chat_tx;
