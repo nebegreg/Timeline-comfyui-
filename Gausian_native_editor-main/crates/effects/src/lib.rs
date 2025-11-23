@@ -152,6 +152,7 @@ pub mod blur;
 pub mod transform;
 pub mod saturation_hue;
 pub mod vignette;
+pub mod chroma_key;
 
 // Re-exports
 pub use brightness_contrast::BrightnessContrastEffect;
@@ -159,3 +160,4 @@ pub use blur::GaussianBlurEffect;
 pub use transform::TransformEffect;
 pub use saturation_hue::SaturationHueEffect;
 pub use vignette::VignetteEffect;
+pub use chroma_key::ChromaKeyEffect;
