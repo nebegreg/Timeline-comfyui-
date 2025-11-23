@@ -1,6 +1,7 @@
 use super::{App, AutoProxySetting, ComfyAlertKind, ViewerScale, WorkspaceView};
 use crate::playback_selector::ProxyMode;
 use crate::proxy_queue::{ProxyReason, ProxyStatus};
+use crate::timeline_ui_helpers;
 use chrono::{Local, TimeZone};
 use egui::{ComboBox, RichText, ScrollArea};
 use project::AssetRow;
@@ -119,6 +120,24 @@ pub(super) fn top_toolbar(app: &mut App, ctx: &egui::Context, _frame: &mut efram
 }
 
 fn timeline_toolbar(app: &mut App, ui: &mut egui::Ui) {
+    // Phase 1: Edit mode selector
+    use crate::edit_modes::EditMode;
+    ui.label("Mode:");
+    for mode in [EditMode::Normal, EditMode::Ripple, EditMode::Roll, EditMode::Slide, EditMode::Slip] {
+        if timeline_ui_helpers::edit_mode_button(ui, app.edit_mode, mode) {
+            app.edit_mode = mode;
+        }
+    }
+
+    ui.separator();
+
+    // Phase 1: Snap toggle
+    if ui.button(if app.snap_settings.enabled { "⊞ Snap" } else { "⊟ Snap" }).clicked() {
+        app.snap_settings.enabled = !app.snap_settings.enabled;
+    }
+
+    ui.separator();
+
     ui.label("Import path:");
     ui.text_edit_singleline(&mut app.import_path);
     if ui.button("Add").clicked() {
