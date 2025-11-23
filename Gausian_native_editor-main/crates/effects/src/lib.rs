@@ -153,6 +153,10 @@ pub mod transform;
 pub mod saturation_hue;
 pub mod vignette;
 pub mod chroma_key;
+pub mod exposure_gamma;
+pub mod sharpen;
+pub mod film_grain;
+pub mod chromatic_aberration;
 
 // Re-exports
 pub use brightness_contrast::BrightnessContrastEffect;
@@ -161,3 +165,7 @@ pub use transform::TransformEffect;
 pub use saturation_hue::SaturationHueEffect;
 pub use vignette::VignetteEffect;
 pub use chroma_key::ChromaKeyEffect;
+pub use exposure_gamma::ExposureGammaEffect;
+pub use sharpen::SharpenEffect;
+pub use film_grain::FilmGrainEffect;
+pub use chromatic_aberration::ChromaticAberrationEffect;
