@@ -372,15 +372,23 @@ pub fn close_gap(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{TimelineNode, TrackBinding};
+    use crate::{TimelineNode, TrackBinding, TrackKind};
 
-    fn create_test_clip(start: Frame, duration: Frame) -> ClipNode {
-        ClipNode {
-            asset_id: Some("test.mp4".to_string()),
-            media_range: FrameRange { start: 0, duration },
-            timeline_range: FrameRange { start, duration },
-            playback_rate: 1.0,
-            reverse: false,
+    fn create_test_clip(start: Frame, duration: Frame) -> TimelineNode {
+        use crate::ClipNode;
+        TimelineNode {
+            id: NodeId::new(),
+            label: Some("Test Clip".to_string()),
+            kind: TimelineNodeKind::Clip(ClipNode {
+                asset_id: Some("test.mp4".to_string()),
+                // Give plenty of media duration for roll edits (3x the timeline duration)
+                media_range: FrameRange { start: 0, duration: duration * 3 },
+                timeline_range: FrameRange { start, duration },
+                playback_rate: 1.0,
+                reverse: false,
+                metadata: serde_json::Value::Null,
+            }),
+            locked: false,
             metadata: serde_json::Value::Null,
         }
     }
@@ -392,33 +400,21 @@ mod tests {
         // Create a track
         let track = TrackBinding {
             id: TrackId::new(),
+            name: "Video 1".to_string(),
             kind: TrackKind::Video,
             node_ids: vec![],
-            label: Some("Video 1".to_string()),
         };
         let track_id = track.id;
         graph.tracks.push(track);
 
         // Add three clips: 0-100, 100-200, 200-300
-        let clip1 = TimelineNode {
-            id: NodeId::new(),
-            label: Some("Clip 1".to_string()),
-            kind: TimelineNodeKind::Clip(create_test_clip(0, 100)),
-        };
+        let clip1 = create_test_clip(0, 100);
         let clip1_id = clip1.id;
 
-        let clip2 = TimelineNode {
-            id: NodeId::new(),
-            label: Some("Clip 2".to_string()),
-            kind: TimelineNodeKind::Clip(create_test_clip(100, 100)),
-        };
+        let clip2 = create_test_clip(100, 100);
         let clip2_id = clip2.id;
 
-        let clip3 = TimelineNode {
-            id: NodeId::new(),
-            label: Some("Clip 3".to_string()),
-            kind: TimelineNodeKind::Clip(create_test_clip(200, 100)),
-        };
+        let clip3 = create_test_clip(200, 100);
         let clip3_id = clip3.id;
 
         graph.nodes.insert(clip1_id, clip1);
@@ -452,25 +448,17 @@ mod tests {
 
         let track = TrackBinding {
             id: TrackId::new(),
+            name: "Video 1".to_string(),
             kind: TrackKind::Video,
             node_ids: vec![],
-            label: Some("Video 1".to_string()),
         };
         graph.tracks.push(track);
 
         // Two adjacent clips: 0-100, 100-200
-        let clip1 = TimelineNode {
-            id: NodeId::new(),
-            label: Some("Clip 1".to_string()),
-            kind: TimelineNodeKind::Clip(create_test_clip(0, 100)),
-        };
+        let clip1 = create_test_clip(0, 100);
         let clip1_id = clip1.id;
 
-        let clip2 = TimelineNode {
-            id: NodeId::new(),
-            label: Some("Clip 2".to_string()),
-            kind: TimelineNodeKind::Clip(create_test_clip(100, 100)),
-        };
+        let clip2 = create_test_clip(100, 100);
         let clip2_id = clip2.id;
 
         graph.nodes.insert(clip1_id, clip1);
