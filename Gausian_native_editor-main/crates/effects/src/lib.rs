@@ -158,6 +158,13 @@ pub mod sharpen;
 pub mod film_grain;
 pub mod chromatic_aberration;
 pub mod lut_effect;
+pub mod crop;
+
+// Phase 2 - New advanced effects
+pub mod curves;
+pub mod color_wheels;
+pub mod corner_pin;
+pub mod blend_modes;
 
 // Re-exports
 pub use brightness_contrast::BrightnessContrastEffect;
@@ -171,3 +178,10 @@ pub use sharpen::SharpenEffect;
 pub use film_grain::FilmGrainEffect;
 pub use chromatic_aberration::ChromaticAberrationEffect;
 pub use lut_effect::LutEffect;
+pub use crop::CropEffect;
+
+// Phase 2 - New advanced effects
+pub use curves::CurvesEffect;
+pub use color_wheels::ColorWheelsEffect;
+pub use corner_pin::CornerPinEffect;
+pub use blend_modes::BlendModesEffect;

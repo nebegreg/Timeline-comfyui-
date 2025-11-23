@@ -1,0 +1,20 @@
+{
+  "rank": "Rank32",
+  "alpha": 32.0,
+  "learning_rate": 0.0001,
+  "batch_size": 1,
+  "epochs": 10,
+  "resolution": [
+    1024,
+    1024
+  ],
+  "trigger_word": null,
+  "train_text_encoder": false,
+  "gradient_accumulation_steps": 1,
+  "lr_scheduler": "Constant",
+  "warmup_steps": 0,
+  "save_every_n_steps": null,
+  "mixed_precision": "Bf16",
+  "use_8bit_adam": true,
+  "seed": 42
+}
