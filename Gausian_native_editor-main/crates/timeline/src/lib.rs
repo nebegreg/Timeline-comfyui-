@@ -7,6 +7,8 @@ mod commands;
 pub use commands::*;
 mod markers;
 pub use markers::*;
+mod automation;
+pub use automation::*;
 
 #[derive(Debug, Error)]
 pub enum TimelineError {

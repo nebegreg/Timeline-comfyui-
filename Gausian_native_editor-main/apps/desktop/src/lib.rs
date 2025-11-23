@@ -11,3 +11,7 @@ pub mod keyboard;
 pub mod timeline_ui_helpers;
 pub mod timeline_toolbar;
 pub mod marker_ui;
+
+// Phase 8: Animation & Keyframing - UI modules
+pub mod automation_ui;
+pub mod graph_editor;
