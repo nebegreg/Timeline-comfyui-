@@ -6767,6 +6767,101 @@ impl eframe::App for App {
                     }
                 }
             }
+
+            // Phase 1: Professional keyboard shortcuts
+            use crate::keyboard::KeyCommand;
+
+            // J/K/L playback control
+            if ctx.input(|i| i.key_pressed(egui::Key::J)) {
+                self.playback_speed.decrease();
+                // Implement reverse playback in future
+            }
+            if ctx.input(|i| i.key_pressed(egui::Key::K)) {
+                // K pauses (already handled by timeline split, but we can add pause here too)
+                if self.playback_clock.playing {
+                    let seq_fps = (self.seq.fps.num.max(1) as f64) / (self.seq.fps.den.max(1) as f64);
+                    let current_sec = (self.playhead as f64) / seq_fps;
+                    self.playback_clock.pause(current_sec);
+                    self.engine.state = PlayState::Paused;
+                    if let Some(engine) = &self.audio_out {
+                        engine.pause(current_sec);
+                    }
+                }
+                self.playback_speed.reset();
+            }
+            if ctx.input(|i| i.key_pressed(egui::Key::L)) {
+                self.playback_speed.increase();
+                // Start playback at increased speed
+                if !self.playback_clock.playing {
+                    let seq_fps = (self.seq.fps.num.max(1) as f64) / (self.seq.fps.den.max(1) as f64);
+                    let current_sec = (self.playhead as f64) / seq_fps;
+                    self.playback_clock.play(current_sec);
+                    self.engine.state = PlayState::Playing;
+                    if let Ok(clips) = self.build_audio_clips() {
+                        if let Some(engine) = &self.audio_out {
+                            engine.start(current_sec, clips);
+                        }
+                    }
+                }
+            }
+
+            // I/O - Set in/out points
+            if ctx.input(|i| i.key_pressed(egui::Key::I)) {
+                use crate::timeline_crate::MarkerType;
+                let _ = self.markers.add_or_update_in_point(self.playhead);
+            }
+            if ctx.input(|i| i.key_pressed(egui::Key::O)) {
+                use crate::timeline_crate::MarkerType;
+                let _ = self.markers.add_or_update_out_point(self.playhead);
+            }
+
+            // M - Add marker
+            if ctx.input(|i| i.key_pressed(egui::Key::M)) {
+                use crate::timeline_crate::{Marker, MarkerId, MarkerType};
+                let marker = Marker {
+                    id: MarkerId::new(),
+                    frame: self.playhead,
+                    label: format!("Marker {}", self.playhead),
+                    marker_type: MarkerType::Standard,
+                    color: "#4488FF".to_string(),
+                    note: String::new(),
+                    created_at: chrono::Utc::now().timestamp(),
+                };
+                let _ = self.markers.add_marker(marker);
+            }
+
+            // A - Select all
+            if ctx.input(|i| i.modifiers.command && i.key_pressed(egui::Key::A)) {
+                // Collect all node IDs from all tracks
+                for binding in &self.seq.graph.tracks {
+                    for node_id in &binding.node_ids {
+                        self.selection.add_to_selection(*node_id);
+                    }
+                }
+            }
+
+            // Escape - Deselect all
+            if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+                self.selection.clear();
+                self.selected = None;
+            }
+
+            // E - Toggle edit modes (cycle through)
+            if ctx.input(|i| i.key_pressed(egui::Key::E)) {
+                use crate::edit_modes::EditMode;
+                self.edit_mode = match self.edit_mode {
+                    EditMode::Normal => EditMode::Ripple,
+                    EditMode::Ripple => EditMode::Roll,
+                    EditMode::Roll => EditMode::Slide,
+                    EditMode::Slide => EditMode::Slip,
+                    EditMode::Slip => EditMode::Normal,
+                };
+            }
+
+            // S - Toggle snap
+            if ctx.input(|i| i.key_pressed(egui::Key::S) && !i.modifiers.command) {
+                self.snap_settings.enabled = !self.snap_settings.enabled;
+            }
         } else {
             ctx.request_repaint_after(Duration::from_millis(200));
         }
