@@ -127,8 +127,8 @@ impl Effect for GaussianBlurEffect {
         EffectCategory::Blur
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[EffectParameter {
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![EffectParameter {
             name: "radius".to_string(),
             display_name: "Blur Radius".to_string(),
             param_type: ParameterType::Slider,

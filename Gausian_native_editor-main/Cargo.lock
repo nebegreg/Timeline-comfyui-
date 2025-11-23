@@ -7666,6 +7666,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "transitions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "wgpu",
+]
+
+[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

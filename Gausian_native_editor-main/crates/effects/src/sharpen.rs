@@ -126,8 +126,8 @@ impl Effect for SharpenEffect {
         EffectCategory::Sharpen
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "strength".to_string(),
                 display_name: "Strength".to_string(),

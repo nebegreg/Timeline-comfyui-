@@ -126,8 +126,8 @@ impl Effect for ChromaKeyEffect {
         EffectCategory::Keying
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "key_color_r".to_string(),
                 display_name: "Key Color R".to_string(),

@@ -126,8 +126,8 @@ impl Effect for ExposureGammaEffect {
         EffectCategory::ColorCorrection
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "exposure".to_string(),
                 display_name: "Exposure".to_string(),

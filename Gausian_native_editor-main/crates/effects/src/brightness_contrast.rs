@@ -136,8 +136,8 @@ impl Effect for BrightnessContrastEffect {
         EffectCategory::ColorCorrection
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "brightness".to_string(),
                 display_name: "Brightness".to_string(),

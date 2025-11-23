@@ -126,8 +126,8 @@ impl Effect for CropEffect {
         EffectCategory::Transform
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "left".to_string(),
                 display_name: "Left".to_string(),

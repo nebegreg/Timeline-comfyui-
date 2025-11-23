@@ -9,9 +9,11 @@ use wgpu;
 pub mod lut3d;
 pub mod color_spaces;
 pub mod parsers;
+pub mod scopes;
 
 pub use lut3d::Lut3D;
 pub use color_spaces::*;
+pub use scopes::{ScopeAnalyzer, ScopeData, ScopeType};
 
 /// Color space identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
