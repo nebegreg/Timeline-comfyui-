@@ -146,12 +146,16 @@ impl Default for EffectManager {
     }
 }
 
-// Modules for specific effects (to be implemented)
+// Modules for specific effects
 pub mod brightness_contrast;
 pub mod blur;
 pub mod transform;
+pub mod saturation_hue;
+pub mod vignette;
 
 // Re-exports
 pub use brightness_contrast::BrightnessContrastEffect;
 pub use blur::GaussianBlurEffect;
 pub use transform::TransformEffect;
+pub use saturation_hue::SaturationHueEffect;
+pub use vignette::VignetteEffect;

@@ -1,4 +1,4 @@
-/// Brightness/Contrast effect
+/// Vignette effect
 /// Phase 2: Rich Effects & Transitions
 
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
@@ -7,13 +7,13 @@ use std::collections::HashMap;
 use wgpu;
 use wgpu::util::DeviceExt;
 
-pub struct BrightnessContrastEffect {
+pub struct VignetteEffect {
     pipeline: Option<wgpu::RenderPipeline>,
     bind_group_layout: Option<wgpu::BindGroupLayout>,
     uniform_bind_group_layout: Option<wgpu::BindGroupLayout>,
 }
 
-impl BrightnessContrastEffect {
+impl VignetteEffect {
     pub fn new() -> Self {
         Self {
             pipeline: None,
@@ -27,16 +27,14 @@ impl BrightnessContrastEffect {
             return;
         }
 
-        // Shader module
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Brightness/Contrast Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/brightness_contrast.wgsl").into()),
+            label: Some("Vignette Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/vignette.wgsl").into()),
         });
 
-        // Bind group layout for texture + sampler
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Brightness/Contrast Texture Bind Group Layout"),
+                label: Some("Vignette Texture Bind Group Layout"),
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
@@ -57,10 +55,9 @@ impl BrightnessContrastEffect {
                 ],
             });
 
-        // Bind group layout for uniforms
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Brightness/Contrast Uniform Bind Group Layout"),
+                label: Some("Vignette Uniform Bind Group Layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -73,16 +70,14 @@ impl BrightnessContrastEffect {
                 }],
             });
 
-        // Pipeline layout
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Brightness/Contrast Pipeline Layout"),
+            label: Some("Vignette Pipeline Layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &uniform_bind_group_layout],
             push_constant_ranges: &[],
         });
 
-        // Render pipeline
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Brightness/Contrast Pipeline"),
+            label: Some("Vignette Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -102,12 +97,7 @@ impl BrightnessContrastEffect {
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleStrip,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                unclipped_depth: false,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                conservative: false,
+                ..Default::default()
             },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
@@ -121,40 +111,40 @@ impl BrightnessContrastEffect {
     }
 }
 
-impl Default for BrightnessContrastEffect {
+impl Default for VignetteEffect {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Effect for BrightnessContrastEffect {
+impl Effect for VignetteEffect {
     fn name(&self) -> &str {
-        "brightness_contrast"
+        "vignette"
     }
 
     fn category(&self) -> EffectCategory {
-        EffectCategory::ColorCorrection
+        EffectCategory::Stylize
     }
 
     fn parameters(&self) -> &[EffectParameter] {
         &[
             EffectParameter {
-                name: "brightness".to_string(),
-                display_name: "Brightness".to_string(),
+                name: "intensity".to_string(),
+                display_name: "Intensity".to_string(),
                 param_type: ParameterType::Slider,
-                default: 0.0,
-                min: -1.0,
+                default: 0.5,
+                min: 0.0,
                 max: 1.0,
-                description: "Adjust overall brightness".to_string(),
+                description: "Vignette darkness intensity".to_string(),
             },
             EffectParameter {
-                name: "contrast".to_string(),
-                display_name: "Contrast".to_string(),
+                name: "softness".to_string(),
+                display_name: "Softness".to_string(),
                 param_type: ParameterType::Slider,
-                default: 1.0,
+                default: 0.5,
                 min: 0.0,
-                max: 2.0,
-                description: "Adjust image contrast".to_string(),
+                max: 1.0,
+                description: "Edge softness of the vignette".to_string(),
             },
         ]
     }
@@ -167,7 +157,6 @@ impl Effect for BrightnessContrastEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        // Ensure pipeline is initialized
         let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
@@ -175,36 +164,30 @@ impl Effect for BrightnessContrastEffect {
         let bind_group_layout = self.bind_group_layout.as_ref().unwrap();
         let uniform_bind_group_layout = self.uniform_bind_group_layout.as_ref().unwrap();
 
-        // Get parameters
-        let brightness = self.get_param(params, "brightness");
-        let contrast = self.get_param(params, "contrast");
+        let intensity = self.get_param(params, "intensity");
+        let softness = self.get_param(params, "softness");
 
-        // Create uniform buffer
-        let uniform_data = [brightness, contrast];
+        let uniform_data = [intensity, softness, 0.0, 0.0];  // Padding for alignment
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Brightness/Contrast Uniforms"),
+            label: Some("Vignette Uniforms"),
             contents: bytemuck::cast_slice(&uniform_data),
             usage: wgpu::BufferUsages::UNIFORM,
         });
 
-        // Create sampler
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Brightness/Contrast Sampler"),
+            label: Some("Vignette Sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
 
-        // Create texture view
         let input_view = input.create_view(&wgpu::TextureViewDescriptor::default());
+        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
 
-        // Create texture bind group
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Brightness/Contrast Texture Bind Group"),
+            label: Some("Vignette Texture Bind Group"),
             layout: bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -218,9 +201,8 @@ impl Effect for BrightnessContrastEffect {
             ],
         });
 
-        // Create uniform bind group
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Brightness/Contrast Uniform Bind Group"),
+            label: Some("Vignette Uniform Bind Group"),
             layout: uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -228,17 +210,13 @@ impl Effect for BrightnessContrastEffect {
             }],
         });
 
-        // Create output view
-        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
-
-        // Render
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Brightness/Contrast Encoder"),
+            label: Some("Vignette Encoder"),
         });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Brightness/Contrast Render Pass"),
+                label: Some("Vignette Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &output_view,
                     resolve_target: None,

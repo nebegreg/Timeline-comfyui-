@@ -1,4 +1,4 @@
-/// Brightness/Contrast effect
+/// Saturation/Hue effect
 /// Phase 2: Rich Effects & Transitions
 
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
@@ -7,13 +7,13 @@ use std::collections::HashMap;
 use wgpu;
 use wgpu::util::DeviceExt;
 
-pub struct BrightnessContrastEffect {
+pub struct SaturationHueEffect {
     pipeline: Option<wgpu::RenderPipeline>,
     bind_group_layout: Option<wgpu::BindGroupLayout>,
     uniform_bind_group_layout: Option<wgpu::BindGroupLayout>,
 }
 
-impl BrightnessContrastEffect {
+impl SaturationHueEffect {
     pub fn new() -> Self {
         Self {
             pipeline: None,
@@ -27,16 +27,14 @@ impl BrightnessContrastEffect {
             return;
         }
 
-        // Shader module
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Brightness/Contrast Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/brightness_contrast.wgsl").into()),
+            label: Some("Saturation/Hue Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/saturation_hue.wgsl").into()),
         });
 
-        // Bind group layout for texture + sampler
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Brightness/Contrast Texture Bind Group Layout"),
+                label: Some("Saturation/Hue Texture Bind Group Layout"),
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
@@ -57,10 +55,9 @@ impl BrightnessContrastEffect {
                 ],
             });
 
-        // Bind group layout for uniforms
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Brightness/Contrast Uniform Bind Group Layout"),
+                label: Some("Saturation/Hue Uniform Bind Group Layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -73,16 +70,14 @@ impl BrightnessContrastEffect {
                 }],
             });
 
-        // Pipeline layout
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Brightness/Contrast Pipeline Layout"),
+            label: Some("Saturation/Hue Pipeline Layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &uniform_bind_group_layout],
             push_constant_ranges: &[],
         });
 
-        // Render pipeline
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Brightness/Contrast Pipeline"),
+            label: Some("Saturation/Hue Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -102,12 +97,7 @@ impl BrightnessContrastEffect {
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleStrip,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                unclipped_depth: false,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                conservative: false,
+                ..Default::default()
             },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
@@ -121,15 +111,15 @@ impl BrightnessContrastEffect {
     }
 }
 
-impl Default for BrightnessContrastEffect {
+impl Default for SaturationHueEffect {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Effect for BrightnessContrastEffect {
+impl Effect for SaturationHueEffect {
     fn name(&self) -> &str {
-        "brightness_contrast"
+        "saturation_hue"
     }
 
     fn category(&self) -> EffectCategory {
@@ -139,22 +129,22 @@ impl Effect for BrightnessContrastEffect {
     fn parameters(&self) -> &[EffectParameter] {
         &[
             EffectParameter {
-                name: "brightness".to_string(),
-                display_name: "Brightness".to_string(),
-                param_type: ParameterType::Slider,
-                default: 0.0,
-                min: -1.0,
-                max: 1.0,
-                description: "Adjust overall brightness".to_string(),
+                name: "saturation".to_string(),
+                display_name: "Saturation".to_string(),
+                param_type: ParameterType::Percentage,
+                default: 100.0,
+                min: 0.0,
+                max: 200.0,
+                description: "Adjust color saturation (0=grayscale, 100=normal, 200=super saturated)".to_string(),
             },
             EffectParameter {
-                name: "contrast".to_string(),
-                display_name: "Contrast".to_string(),
-                param_type: ParameterType::Slider,
-                default: 1.0,
-                min: 0.0,
-                max: 2.0,
-                description: "Adjust image contrast".to_string(),
+                name: "hue".to_string(),
+                display_name: "Hue Shift".to_string(),
+                param_type: ParameterType::Angle,
+                default: 0.0,
+                min: -180.0,
+                max: 180.0,
+                description: "Rotate hue angle in degrees".to_string(),
             },
         ]
     }
@@ -167,7 +157,6 @@ impl Effect for BrightnessContrastEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        // Ensure pipeline is initialized
         let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
@@ -175,36 +164,32 @@ impl Effect for BrightnessContrastEffect {
         let bind_group_layout = self.bind_group_layout.as_ref().unwrap();
         let uniform_bind_group_layout = self.uniform_bind_group_layout.as_ref().unwrap();
 
-        // Get parameters
-        let brightness = self.get_param(params, "brightness");
-        let contrast = self.get_param(params, "contrast");
+        // Get parameters (convert percentage to 0-2 range, angle to radians)
+        let saturation = self.get_param(params, "saturation") / 100.0;
+        let hue_degrees = self.get_param(params, "hue");
+        let hue_radians = hue_degrees.to_radians();
 
-        // Create uniform buffer
-        let uniform_data = [brightness, contrast];
+        let uniform_data = [saturation, hue_radians];
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Brightness/Contrast Uniforms"),
+            label: Some("Saturation/Hue Uniforms"),
             contents: bytemuck::cast_slice(&uniform_data),
             usage: wgpu::BufferUsages::UNIFORM,
         });
 
-        // Create sampler
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Brightness/Contrast Sampler"),
+            label: Some("Saturation/Hue Sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
 
-        // Create texture view
         let input_view = input.create_view(&wgpu::TextureViewDescriptor::default());
+        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
 
-        // Create texture bind group
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Brightness/Contrast Texture Bind Group"),
+            label: Some("Saturation/Hue Texture Bind Group"),
             layout: bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -218,9 +203,8 @@ impl Effect for BrightnessContrastEffect {
             ],
         });
 
-        // Create uniform bind group
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Brightness/Contrast Uniform Bind Group"),
+            label: Some("Saturation/Hue Uniform Bind Group"),
             layout: uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -228,17 +212,13 @@ impl Effect for BrightnessContrastEffect {
             }],
         });
 
-        // Create output view
-        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
-
-        // Render
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Brightness/Contrast Encoder"),
+            label: Some("Saturation/Hue Encoder"),
         });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Brightness/Contrast Render Pass"),
+                label: Some("Saturation/Hue Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &output_view,
                     resolve_target: None,
