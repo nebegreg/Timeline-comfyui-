@@ -391,6 +391,93 @@ impl App {
         }
     }
 
+    /// Phase 1: Find nearest snap point for a given frame
+    fn find_snap_point(&self, target_frame: i64) -> Option<i64> {
+        if !self.snap_settings.enabled {
+            return None;
+        }
+
+        let tolerance_frames = (self.snap_settings.snap_tolerance / self.zoom_px_per_frame).ceil() as i64;
+        let mut best_snap: Option<(i64, i64)> = None; // (frame, distance)
+
+        // Snap to playhead
+        if self.snap_settings.snap_to_playhead {
+            let dist = (target_frame - self.playhead).abs();
+            if dist <= tolerance_frames {
+                best_snap = Some((self.playhead, dist));
+            }
+        }
+
+        // Snap to markers
+        if self.snap_settings.snap_to_markers {
+            for marker in self.markers.all_markers() {
+                let dist = (target_frame - marker.frame).abs();
+                if dist <= tolerance_frames {
+                    if let Some((_, best_dist)) = best_snap {
+                        if dist < best_dist {
+                            best_snap = Some((marker.frame, dist));
+                        }
+                    } else {
+                        best_snap = Some((marker.frame, dist));
+                    }
+                }
+            }
+        }
+
+        // Snap to seconds
+        if self.snap_settings.snap_to_seconds {
+            let fps = self.seq.fps.num.max(1) as f32 / self.seq.fps.den.max(1) as f32;
+            let nearest_second_frame = ((target_frame as f32 / fps).round() * fps) as i64;
+            let dist = (target_frame - nearest_second_frame).abs();
+            if dist <= tolerance_frames {
+                if let Some((_, best_dist)) = best_snap {
+                    if dist < best_dist {
+                        best_snap = Some((nearest_second_frame, dist));
+                    }
+                } else {
+                    best_snap = Some((nearest_second_frame, dist));
+                }
+            }
+        }
+
+        // Snap to other clips (start and end points)
+        if self.snap_settings.snap_to_clips {
+            for binding in &self.seq.graph.tracks {
+                for node_id in &binding.node_ids {
+                    if let Some(node) = self.seq.graph.nodes.get(node_id) {
+                        if let Some(range) = Self::node_frame_range(node) {
+                            // Check start
+                            let dist_start = (target_frame - range.start).abs();
+                            if dist_start <= tolerance_frames {
+                                if let Some((_, best_dist)) = best_snap {
+                                    if dist_start < best_dist {
+                                        best_snap = Some((range.start, dist_start));
+                                    }
+                                } else {
+                                    best_snap = Some((range.start, dist_start));
+                                }
+                            }
+                            // Check end
+                            let end_frame = range.end();
+                            let dist_end = (target_frame - end_frame).abs();
+                            if dist_end <= tolerance_frames {
+                                if let Some((_, best_dist)) = best_snap {
+                                    if dist_end < best_dist {
+                                        best_snap = Some((end_frame, dist_end));
+                                    }
+                                } else {
+                                    best_snap = Some((end_frame, dist_end));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        best_snap.map(|(frame, _)| frame)
+    }
+
     pub(crate) fn update_drag_preview(
         &mut self,
         drag: &mut DragState,
@@ -406,25 +493,27 @@ impl App {
         let mx = pointer.x;
         let dx_px = mx - drag.start_mouse_x;
         let df = (dx_px / self.zoom_px_per_frame).round() as i64;
-        let fpsf = self.seq.fps.num.max(1) as f32 / self.seq.fps.den.max(1) as f32;
-        let eps = 3.0;
 
         match drag.mode {
             DragMode::Move => {
                 let mut new_from = (drag.orig_from + df).max(0);
-                let secf = (new_from as f32 / fpsf).round() * fpsf;
-                if (secf - new_from as f32).abs() <= eps {
-                    new_from = secf as i64;
+
+                // Phase 1: Apply snapping if enabled
+                if let Some(snap_frame) = self.find_snap_point(new_from) {
+                    new_from = snap_frame;
                 }
+
                 self.preview_move_node(drag, new_from);
             }
             DragMode::TrimStart => {
                 let mut new_from =
                     (drag.orig_from + df).clamp(0, drag.orig_from + drag.orig_dur - 1);
-                let secf = (new_from as f32 / fpsf).round() * fpsf;
-                if (secf - new_from as f32).abs() <= eps {
-                    new_from = secf as i64;
+
+                // Phase 1: Apply snapping if enabled
+                if let Some(snap_frame) = self.find_snap_point(new_from) {
+                    new_from = snap_frame.clamp(0, drag.orig_from + drag.orig_dur - 1);
                 }
+
                 let delta_frames = (new_from - drag.orig_from).max(0);
                 let new_duration = (drag.orig_dur - delta_frames).max(1);
                 self.preview_trim_start_node(drag, new_from, new_duration, delta_frames);
@@ -432,10 +521,15 @@ impl App {
             DragMode::TrimEnd => {
                 let mut new_duration = (drag.orig_dur + df).max(1);
                 let end = drag.orig_from + new_duration;
-                let secf = (end as f32 / fpsf).round() * fpsf;
-                if (secf - end as f32).abs() <= eps {
-                    new_duration = (secf as i64 - drag.orig_from).max(1);
-                }
+
+                // Phase 1: Apply snapping if enabled
+                let snapped_end = if let Some(snap_frame) = self.find_snap_point(end) {
+                    snap_frame
+                } else {
+                    end
+                };
+                new_duration = (snapped_end - drag.orig_from).max(1);
+
                 self.preview_trim_end_node(drag, new_duration);
             }
         }
@@ -1010,12 +1104,65 @@ impl App {
 
                 // Click/drag background to scrub (when not dragging a clip)
                 if response.clicked() && !clicked_item {
-                    // Phase 1: Clear new selection state
-                    self.selection.clear();
-                    self.selected = None;
+                    // Phase 1: Clear new selection state (unless Shift held for multi-select)
+                    let modifiers = ui.input(|i| i.modifiers);
+                    if !modifiers.shift {
+                        self.selection.clear();
+                        self.selected = None;
+                    }
                 }
 
+                // Phase 1: Rectangle selection with Shift+Drag
                 if self.drag.is_none() && self.dragging_asset.is_none() {
+                    let modifiers = ui.input(|i| i.modifiers);
+
+                    // Start rectangle selection on Shift+Drag
+                    if response.drag_started() && modifiers.shift {
+                        if let Some(pos) = response.interact_pointer_pos() {
+                            use crate::selection::RectSelection;
+                            self.rect_selection = Some(RectSelection::new(pos));
+                        }
+                    }
+
+                    // Update rectangle selection
+                    if let Some(ref mut rect_sel) = self.rect_selection {
+                        if response.dragged() {
+                            if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
+                                rect_sel.update(pos);
+                            }
+                        }
+
+                        // Draw rectangle selection
+                        let sel_rect = rect_sel.rect();
+                        timeline_ui_helpers::draw_rect_selection(&painter, sel_rect);
+
+                        // On drag release, select all clips in rectangle
+                        if response.drag_released() {
+                            // Build list of (NodeId, Rect) for all clips
+                            let mut node_rects = Vec::new();
+                            for (ti, binding) in self.seq.graph.tracks.iter().enumerate() {
+                                let y = rect.top() + ti as f32 * track_h;
+                                for node_id in &binding.node_ids {
+                                    if let Some(node) = self.seq.graph.nodes.get(node_id) {
+                                        if let Some(display) = Self::display_info_for_node(node, &binding.kind) {
+                                            let x0 = rect.left() + display.start as f32 * self.zoom_px_per_frame;
+                                            let x1 = x0 + display.duration as f32 * self.zoom_px_per_frame;
+                                            let clip_rect = egui::Rect::from_min_max(
+                                                egui::pos2(x0, y + 4.0),
+                                                egui::pos2(x1, y + track_h - 4.0),
+                                            );
+                                            node_rects.push((*node_id, clip_rect));
+                                        }
+                                    }
+                                }
+                            }
+                            self.selection.select_in_rect(sel_rect, &node_rects);
+                            self.rect_selection = None;
+                        }
+                    }
+                }
+
+                if self.drag.is_none() && self.dragging_asset.is_none() && self.rect_selection.is_none() {
                     let was_playing = self.playback_clock.playing;
                     // Single click: move playhead on mouse up as well
                     if response.clicked() {
@@ -1109,6 +1256,22 @@ impl App {
                 } else if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
                     if let Some(mut drag) = self.drag.take() {
                         self.update_drag_preview(&mut drag, pos, rect, track_h);
+
+                        // Phase 1: Draw snap indicator if snapping is active
+                        if self.snap_settings.enabled {
+                            if let Some(node) = self.seq.graph.nodes.get(&drag.node_id) {
+                                if let Some(range) = Self::node_frame_range(node) {
+                                    // Check if the clip start is snapped
+                                    if let Some(snap_frame) = self.find_snap_point(range.start) {
+                                        if snap_frame == range.start {
+                                            let snap_x = rect.left() + snap_frame as f32 * self.zoom_px_per_frame;
+                                            timeline_ui_helpers::draw_snap_indicator(&painter, snap_x, rect.top()..=rect.bottom());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         self.drag = Some(drag);
                     }
                 }
