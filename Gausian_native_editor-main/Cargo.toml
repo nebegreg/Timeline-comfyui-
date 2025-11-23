@@ -12,6 +12,7 @@ members = [
   "crates/effects",     # Phase 2: Rich Effects & Transitions
   "crates/transitions", # Phase 2: Rich Effects & Transitions
   "crates/color",       # Phase 3: Color Management & LUTs
+  "crates/ai-pipeline", # Phase 4: AI Pipeline for LoRA Training
   "apps/desktop",
   "apps/comfywebview",
 ]

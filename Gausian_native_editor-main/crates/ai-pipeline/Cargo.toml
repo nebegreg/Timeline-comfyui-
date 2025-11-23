@@ -1,0 +1,41 @@
+[package]
+name = "ai-pipeline"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+chrono = "0.4"
+
+# HTTP client for API calls
+reqwest = { version = "0.11", features = ["json", "multipart", "stream"] }
+
+# Image processing
+image = { version = "0.25", features = ["png", "jpeg"] }
+
+# Encoding
+base64 = "0.21"
+
+# ML/AI (optional - for local inference)
+# candle-core = { version = "0.4", optional = true }
+# candle-nn = { version = "0.4", optional = true }
+# candle-transformers = { version = "0.4", optional = true }
+# tokenizers = { version = "0.15", optional = true }
+
+# File system
+walkdir = "2"
+sha2 = "0.10"
+hex = "0.4"
+
+# Progress tracking
+indicatif = "0.17"
+
+[features]
+default = []
+local-inference = [] # Enable for local BLIP2/LLaVA inference
