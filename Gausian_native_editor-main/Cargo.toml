@@ -9,10 +9,11 @@ members = [
   "crates/plugin-host",
   "crates/native-decoder",
   "crates/cli",
-  "crates/effects",     # Phase 2: Rich Effects & Transitions
-  "crates/transitions", # Phase 2: Rich Effects & Transitions
-  "crates/color",       # Phase 3: Color Management & LUTs
-  "crates/ai-pipeline", # Phase 4: AI Pipeline for LoRA Training
+  "crates/effects",       # Phase 2: Rich Effects & Transitions
+  "crates/transitions",   # Phase 2: Rich Effects & Transitions
+  "crates/color",         # Phase 3: Color Management & LUTs
+  "crates/ai-pipeline",   # Phase 4: AI Pipeline for LoRA Training
+  "crates/collaboration", # Phase 7: Collaborative Editing
   "apps/desktop",
   "apps/comfywebview",
 ]
