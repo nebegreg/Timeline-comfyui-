@@ -1,4 +1,4 @@
-use crate::{PluginContext, PluginError, PluginResult};
+use crate::{PluginContext, PluginError, PluginResult, ResourceLimits};
 use anyhow::Result;
 use wasmtime::*;
 
@@ -6,6 +6,7 @@ use wasmtime::*;
 pub struct WasmRuntime {
     engine: Engine,
     linker: Linker<WasmPluginState>,
+    resource_limits: ResourceLimits,
 }
 
 /// State passed to WASM plugin instances
@@ -13,43 +14,88 @@ pub struct WasmPluginState {
     pub context: PluginContext,
     pub logs: Vec<String>,
     pub memory_limit: usize,
+    pub memory_used: usize,
+}
+
+impl ResourceLimiter for WasmPluginState {
+    fn memory_growing(&mut self, _current: usize, desired: usize, _maximum: Option<usize>) -> Result<bool, anyhow::Error> {
+        // Check if new size would exceed limit
+        if desired > self.memory_limit {
+            return Ok(false); // Deny the allocation
+        }
+
+        self.memory_used = desired;
+        Ok(true) // Allow the allocation
+    }
+
+    fn table_growing(&mut self, _current: usize, desired: usize, _maximum: Option<usize>) -> Result<bool, anyhow::Error> {
+        // Allow reasonable table sizes (for function references, etc.)
+        Ok(desired < 10_000)
+    }
+
+    fn instances(&self) -> usize {
+        1 // Only one instance at a time
+    }
+
+    fn tables(&self) -> usize {
+        1
+    }
+
+    fn memories(&self) -> usize {
+        1
+    }
 }
 
 impl WasmRuntime {
-    pub fn new() -> Result<Self> {
+    pub fn new(resource_limits: ResourceLimits) -> Result<Self> {
         let mut config = Config::new();
+
+        // Enable WASM features
         config.wasm_simd(true);
         config.wasm_bulk_memory(true);
         config.wasm_multi_value(true);
+        config.wasm_reference_types(true);
+
+        // Enable fuel metering for CPU limits
         config.consume_fuel(true);
+
+        // Enable memory limits
+        config.max_wasm_stack(256 * 1024); // 256KB stack limit
 
         let engine = Engine::new(&config)?;
         let mut linker = Linker::new(&engine);
 
-        // Add WASI support would go here
-        // wasmtime_wasi::add_to_linker(&mut linker, |state: &mut WasmPluginState| {
-        //     // Create WASI context with limited permissions
-        //     &mut state.context
-        // })?;
-
         // Add custom host functions
         Self::define_host_functions(&mut linker)?;
 
-        Ok(Self { engine, linker })
+        Ok(Self {
+            engine,
+            linker,
+            resource_limits,
+        })
+    }
+
+    pub fn with_default_limits() -> Result<Self> {
+        Self::new(ResourceLimits::default())
     }
 
     pub fn execute_plugin(&self, module: &Module, context: PluginContext) -> Result<PluginResult> {
         let mut store = Store::new(
             &self.engine,
             WasmPluginState {
-                context,
+                context: context.clone(),
                 logs: Vec::new(),
-                memory_limit: 64 * 1024 * 1024, // 64MB limit
+                memory_limit: self.resource_limits.max_memory_bytes as usize,
+                memory_used: 0,
             },
         );
 
-        // Set fuel for execution limits
-        store.set_fuel(10_000_000)?; // Limit execution time
+        // Set fuel for execution limits (fuel units roughly correlate to instructions)
+        let fuel_amount = self.resource_limits.max_cpu_time_ms * 1_000_000; // ~1M fuel per ms
+        store.set_fuel(fuel_amount)?;
+
+        // Limit memory
+        store.limiter(|state| state as &mut dyn ResourceLimiter);
 
         let instance = self.linker.instantiate(&mut store, module)?;
 
@@ -58,21 +104,29 @@ impl WasmRuntime {
             .get_typed_func::<(), i32>(&mut store, "plugin_main")
             .map_err(|_| PluginError::WasmRuntime("plugin_main function not found".to_string()))?;
 
-        let result_code = main_func.call(&mut store, ())?;
+        let result_code = main_func.call(&mut store, ()).map_err(|e| {
+            // Check if fuel exhausted (get_fuel returns remaining fuel)
+            let remaining_fuel = store.get_fuel().unwrap_or(0);
+            if remaining_fuel == 0 {
+                PluginError::Timeout("WASM plugin exceeded CPU time limit".to_string())
+            } else {
+                PluginError::WasmRuntime(format!("Plugin execution failed: {}", e))
+            }
+        })?;
 
         let state = store.data();
         let success = result_code == 0;
 
         Ok(PluginResult {
             success,
-            output_items: vec![], // TODO: Extract from WASM memory
+            output_items: vec![], // TODO: Extract from WASM memory if needed
             modified_sequence: None,
             artifacts: vec![],
             logs: state.logs.clone(),
             error_message: if success {
                 None
             } else {
-                Some("Plugin returned error code".to_string())
+                Some(format!("Plugin returned error code: {}", result_code))
             },
         })
     }

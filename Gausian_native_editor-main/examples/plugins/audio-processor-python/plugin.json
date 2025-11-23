@@ -1,0 +1,33 @@
+{
+  "name": "Audio Normalizer",
+  "version": "1.0.0",
+  "author": "Gausian Team",
+  "description": "Normalize audio levels with peak limiting",
+  "plugin_type": "AudioProcessor",
+  "runtime": "Python",
+  "entry_point": "audio_normalizer.py",
+  "capabilities": ["ProcessAudio"],
+  "parameters": [
+    {
+      "name": "target_level",
+      "display_name": "Target Level (dBFS)",
+      "param_type": "Float",
+      "default_value": -6.0,
+      "min_value": -30.0,
+      "max_value": 0.0,
+      "description": "Target peak level in dBFS",
+      "group": null
+    },
+    {
+      "name": "enable_limiter",
+      "display_name": "Enable Limiter",
+      "param_type": "Boolean",
+      "default_value": true,
+      "description": "Apply peak limiting to prevent clipping",
+      "group": null
+    }
+  ],
+  "signature": null,
+  "dependencies": [],
+  "minimum_host_version": "0.1.0"
+}

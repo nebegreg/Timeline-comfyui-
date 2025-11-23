@@ -21,6 +21,7 @@ reqwest = { version = "0.12", features = ["json", "multipart"] }
 libloading = "0.8"
 sha2 = "0.10"
 zip = "0.6"
+chrono = "0.4"
 
 [build-dependencies]
 tonic-build = "0.12"

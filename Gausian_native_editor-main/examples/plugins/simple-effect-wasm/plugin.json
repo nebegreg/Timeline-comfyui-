@@ -1,0 +1,25 @@
+{
+  "name": "Simple WASM Effect Template",
+  "version": "1.0.0",
+  "author": "Gausian Team",
+  "description": "Template for WASM-based video effect plugins",
+  "plugin_type": "Effect",
+  "runtime": "Wasm",
+  "entry_point": "simple_effect.wasm",
+  "capabilities": ["ProcessVideo"],
+  "parameters": [
+    {
+      "name": "intensity",
+      "display_name": "Effect Intensity",
+      "param_type": "Float",
+      "default_value": 0.5,
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "description": "Intensity of the effect (0.0 to 1.0)",
+      "group": null
+    }
+  ],
+  "signature": null,
+  "dependencies": [],
+  "minimum_host_version": "0.1.0"
+}

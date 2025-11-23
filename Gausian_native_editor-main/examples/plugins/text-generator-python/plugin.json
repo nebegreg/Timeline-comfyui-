@@ -1,0 +1,45 @@
+{
+  "name": "Animated Text Generator",
+  "version": "1.0.0",
+  "author": "Gausian Team",
+  "description": "Generate animated text overlays with customizable fonts and animations",
+  "plugin_type": "Generator",
+  "runtime": "Python",
+  "entry_point": "text_generator.py",
+  "capabilities": ["GenerateContent"],
+  "parameters": [
+    {
+      "name": "text",
+      "display_name": "Text Content",
+      "param_type": "String",
+      "default_value": "Hello World",
+      "description": "Text to display",
+      "group": null
+    },
+    {
+      "name": "font_size",
+      "display_name": "Font Size",
+      "param_type": "Integer",
+      "default_value": 72,
+      "min_value": 12,
+      "max_value": 300,
+      "description": "Font size in points",
+      "group": null
+    },
+    {
+      "name": "animation",
+      "display_name": "Animation Type",
+      "param_type": {
+        "Enum": {
+          "options": ["None", "FadeIn", "SlideIn", "TypeWriter"]
+        }
+      },
+      "default_value": "FadeIn",
+      "description": "Text animation style",
+      "group": null
+    }
+  ],
+  "signature": null,
+  "dependencies": [],
+  "minimum_host_version": "0.1.0"
+}
