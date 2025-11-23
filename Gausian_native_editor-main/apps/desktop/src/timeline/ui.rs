@@ -9,6 +9,7 @@ use serde_json::Value;
 
 use crate::decode::PlayState;
 use crate::interaction::{DragMode, DragState, LinkedDragNode};
+use crate::timeline_ui_helpers;
 use crate::App;
 
 #[derive(Debug, Clone)]
@@ -861,16 +862,19 @@ impl App {
                             egui::pos2(x0, y + 4.0),
                             egui::pos2(x1, y + track_h - 4.0),
                         );
-                        let mut border = egui::Stroke::new(1.0, egui::Color32::BLACK);
-                        if let Some(sel) = self.selected {
-                            if sel == (ti, ii) {
-                                border = egui::Stroke::new(2.0, egui::Color32::WHITE);
-                            }
-                        }
                         let label = display.label.clone();
                         let color = display.color;
                         painter.rect_filled(r, 4.0, color);
-                        painter.rect_stroke(r, 4.0, border);
+
+                        // Phase 1: Use new selection system with visual outline
+                        let is_selected = self.selection.selected_nodes.contains(node_id);
+                        let is_primary = self.selection.primary_node == Some(*node_id);
+                        if is_selected {
+                            timeline_ui_helpers::draw_selection_outline(&painter, r, is_primary);
+                        } else {
+                            // Default border for non-selected clips
+                            painter.rect_stroke(r, 4.0, egui::Stroke::new(1.0, egui::Color32::BLACK));
+                        }
                         painter.text(
                             r.center_top() + egui::vec2(0.0, 12.0),
                             egui::Align2::CENTER_TOP,
@@ -921,6 +925,16 @@ impl App {
                             egui::Sense::click_and_drag(),
                         );
                         if resp.clicked() {
+                            // Phase 1: Multi-selection support with modifiers
+                            let modifiers = ui.input(|i| i.modifiers);
+                            if modifiers.shift {
+                                self.selection.add_to_selection(*node_id);
+                            } else if modifiers.command || modifiers.ctrl {
+                                self.selection.toggle_selection(*node_id);
+                            } else {
+                                self.selection.select_single(*node_id);
+                            }
+                            // Also update legacy selection for compatibility
                             self.selected = Some((ti, ii));
                             clicked_item = true;
                         }
@@ -981,8 +995,23 @@ impl App {
                     egui::Stroke::new(2.0, egui::Color32::from_rgb(220, 60, 60)),
                 );
 
+                // Phase 1: Draw markers
+                for marker in self.markers.all_markers() {
+                    let marker_x = rect.left() + marker.frame as f32 * self.zoom_px_per_frame;
+                    timeline_ui_helpers::draw_marker(&painter, marker, marker_x, rect.top(), rect.bottom(), true);
+                }
+
+                // Phase 1: Draw regions (in/out ranges)
+                for region in self.markers.all_regions() {
+                    let start_x = rect.left() + region.start_frame as f32 * self.zoom_px_per_frame;
+                    let end_x = rect.left() + region.end_frame as f32 * self.zoom_px_per_frame;
+                    timeline_ui_helpers::draw_region(&painter, start_x, end_x, rect.top(), rect.bottom(), &region.color);
+                }
+
                 // Click/drag background to scrub (when not dragging a clip)
                 if response.clicked() && !clicked_item {
+                    // Phase 1: Clear new selection state
+                    self.selection.clear();
                     self.selected = None;
                 }
 
