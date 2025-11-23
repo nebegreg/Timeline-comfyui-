@@ -126,8 +126,8 @@ impl Effect for ChromaticAberrationEffect {
         EffectCategory::Distort
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "strength".to_string(),
                 display_name: "Strength".to_string(),

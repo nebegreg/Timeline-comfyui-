@@ -126,8 +126,8 @@ impl Effect for VignetteEffect {
         EffectCategory::Stylize
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "intensity".to_string(),
                 display_name: "Intensity".to_string(),

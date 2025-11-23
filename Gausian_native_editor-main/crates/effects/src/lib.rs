@@ -14,8 +14,8 @@ pub trait Effect: Send + Sync {
     /// Effect category
     fn category(&self) -> EffectCategory;
 
-    /// Effect parameters
-    fn parameters(&self) -> &[EffectParameter];
+    /// Effect parameters (returns owned vec to avoid lifetime issues)
+    fn parameters(&self) -> Vec<EffectParameter>;
 
     /// Apply effect to texture
     fn apply(
@@ -157,6 +157,7 @@ pub mod exposure_gamma;
 pub mod sharpen;
 pub mod film_grain;
 pub mod chromatic_aberration;
+pub mod lut_effect;
 
 // Re-exports
 pub use brightness_contrast::BrightnessContrastEffect;
@@ -169,3 +170,4 @@ pub use exposure_gamma::ExposureGammaEffect;
 pub use sharpen::SharpenEffect;
 pub use film_grain::FilmGrainEffect;
 pub use chromatic_aberration::ChromaticAberrationEffect;
+pub use lut_effect::LutEffect;

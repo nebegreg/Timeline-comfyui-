@@ -126,8 +126,8 @@ impl Effect for SaturationHueEffect {
         EffectCategory::ColorCorrection
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "saturation".to_string(),
                 display_name: "Saturation".to_string(),

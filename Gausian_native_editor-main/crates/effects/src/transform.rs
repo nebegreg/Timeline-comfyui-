@@ -145,8 +145,8 @@ impl Effect for TransformEffect {
         EffectCategory::Transform
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
+    fn parameters(&self) -> Vec<EffectParameter> {
+        vec![
             EffectParameter {
                 name: "position_x".to_string(),
                 display_name: "Position X".to_string(),
