@@ -10,6 +10,7 @@ members = [
   "crates/native-decoder",
   "crates/cli",
   "crates/effects",     # Phase 2: Rich Effects & Transitions
+  "crates/transitions", # Phase 2: Rich Effects & Transitions
   "crates/color",       # Phase 3: Color Management & LUTs
   "apps/desktop",
   "apps/comfywebview",

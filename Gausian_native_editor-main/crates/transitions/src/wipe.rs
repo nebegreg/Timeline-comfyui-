@@ -1,25 +1,33 @@
-/// Transform effect (position, scale, rotation)
+/// Wipe transition (directional reveal)
 /// Phase 2: Rich Effects & Transitions
 
-use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
+use crate::{Transition, TransitionCategory};
 use anyhow::Result;
-use std::collections::HashMap;
 use wgpu;
 use wgpu::util::DeviceExt;
-use glam::{Mat3, Vec2};
 
-pub struct TransformEffect {
+pub struct WipeTransition {
     pipeline: Option<wgpu::RenderPipeline>,
     bind_group_layout: Option<wgpu::BindGroupLayout>,
     uniform_bind_group_layout: Option<wgpu::BindGroupLayout>,
+    direction: WipeDirection,
 }
 
-impl TransformEffect {
-    pub fn new() -> Self {
+#[derive(Debug, Clone, Copy)]
+pub enum WipeDirection {
+    LeftToRight,
+    RightToLeft,
+    TopToBottom,
+    BottomToTop,
+}
+
+impl WipeTransition {
+    pub fn new(direction: WipeDirection) -> Self {
         Self {
             pipeline: None,
             bind_group_layout: None,
             uniform_bind_group_layout: None,
+            direction,
         }
     }
 
@@ -29,13 +37,13 @@ impl TransformEffect {
         }
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Transform Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/transform.wgsl").into()),
+            label: Some("Wipe Transition Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/wipe.wgsl").into()),
         });
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Transform Texture Bind Group Layout"),
+                label: Some("Wipe Texture Bind Group Layout"),
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
@@ -50,6 +58,16 @@ impl TransformEffect {
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
@@ -58,7 +76,7 @@ impl TransformEffect {
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Transform Uniform Bind Group Layout"),
+                label: Some("Wipe Uniform Bind Group Layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -72,13 +90,13 @@ impl TransformEffect {
             });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Transform Pipeline Layout"),
+            label: Some("Wipe Pipeline Layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &uniform_bind_group_layout],
             push_constant_ranges: &[],
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Transform Pipeline"),
+            label: Some("Wipe Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -98,7 +116,7 @@ impl TransformEffect {
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleStrip,
-                ..Default::default()
+                ..Default::default(),
             },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
@@ -111,86 +129,37 @@ impl TransformEffect {
         self.uniform_bind_group_layout = Some(uniform_bind_group_layout);
     }
 
-    fn build_transform_matrix(
-        position: Vec2,
-        scale: f32,
-        rotation_degrees: f32,
-    ) -> Mat3 {
-        // Build 2D transformation matrix: Translation × Rotation × Scale
-        let rotation_radians = rotation_degrees.to_radians();
-        let cos_r = rotation_radians.cos();
-        let sin_r = rotation_radians.sin();
-
-        // Combine transformations (applied in reverse order: scale → rotate → translate)
-        Mat3::from_cols(
-            glam::Vec3::new(cos_r * scale, sin_r * scale, 0.0),
-            glam::Vec3::new(-sin_r * scale, cos_r * scale, 0.0),
-            glam::Vec3::new(position.x, position.y, 1.0),
-        )
+    fn direction_vec(&self) -> (f32, f32) {
+        match self.direction {
+            WipeDirection::LeftToRight => (1.0, 0.0),
+            WipeDirection::RightToLeft => (-1.0, 0.0),
+            WipeDirection::TopToBottom => (0.0, 1.0),
+            WipeDirection::BottomToTop => (0.0, -1.0),
+        }
     }
 }
 
-impl Default for TransformEffect {
+impl Default for WipeTransition {
     fn default() -> Self {
-        Self::new()
+        Self::new(WipeDirection::LeftToRight)
     }
 }
 
-impl Effect for TransformEffect {
+impl Transition for WipeTransition {
     fn name(&self) -> &str {
-        "transform"
+        "wipe"
     }
 
-    fn category(&self) -> EffectCategory {
-        EffectCategory::Transform
+    fn category(&self) -> TransitionCategory {
+        TransitionCategory::Wipe
     }
 
-    fn parameters(&self) -> &[EffectParameter] {
-        &[
-            EffectParameter {
-                name: "position_x".to_string(),
-                display_name: "Position X".to_string(),
-                param_type: ParameterType::Slider,
-                default: 0.0,
-                min: -1920.0,
-                max: 1920.0,
-                description: "X position offset".to_string(),
-            },
-            EffectParameter {
-                name: "position_y".to_string(),
-                display_name: "Position Y".to_string(),
-                param_type: ParameterType::Slider,
-                default: 0.0,
-                min: -1080.0,
-                max: 1080.0,
-                description: "Y position offset".to_string(),
-            },
-            EffectParameter {
-                name: "scale".to_string(),
-                display_name: "Scale".to_string(),
-                param_type: ParameterType::Slider,
-                default: 1.0,
-                min: 0.01,
-                max: 5.0,
-                description: "Uniform scale".to_string(),
-            },
-            EffectParameter {
-                name: "rotation".to_string(),
-                display_name: "Rotation".to_string(),
-                param_type: ParameterType::Angle,
-                default: 0.0,
-                min: 0.0,
-                max: 360.0,
-                description: "Rotation in degrees".to_string(),
-            },
-        ]
-    }
-
-    fn apply(
+    fn render(
         &self,
-        input: &wgpu::Texture,
+        from_frame: &wgpu::Texture,
+        to_frame: &wgpu::Texture,
+        progress: f32,
         output: &wgpu::Texture,
-        params: &HashMap<String, f32>,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
@@ -201,62 +170,50 @@ impl Effect for TransformEffect {
         let bind_group_layout = self.bind_group_layout.as_ref().unwrap();
         let uniform_bind_group_layout = self.uniform_bind_group_layout.as_ref().unwrap();
 
-        // Get parameters
-        let pos_x = self.get_param(params, "position_x");
-        let pos_y = self.get_param(params, "position_y");
-        let scale = self.get_param(params, "scale");
-        let rotation = self.get_param(params, "rotation");
+        let (dir_x, dir_y) = self.direction_vec();
+        let feather = 0.05;  // Edge softness
 
-        // Normalize position to [-0.5, 0.5] range
-        // Assuming 1920x1080 reference resolution
-        let position = Vec2::new(pos_x / 1920.0, pos_y / 1080.0);
-
-        // Build transformation matrix
-        let transform_matrix = Self::build_transform_matrix(position, scale, rotation);
-
-        // Convert Mat3 to array for uniform buffer (column-major, 3x3 + padding)
-        let matrix_data = transform_matrix.to_cols_array();
-        let uniform_data = [
-            matrix_data[0], matrix_data[1], matrix_data[2], 0.0,  // Column 1 + padding
-            matrix_data[3], matrix_data[4], matrix_data[5], 0.0,  // Column 2 + padding
-            matrix_data[6], matrix_data[7], matrix_data[8], 0.0,  // Column 3 + padding
-        ];
-
+        let uniform_data = [progress, dir_x, dir_y, feather];
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Transform Uniforms"),
+            label: Some("Wipe Uniforms"),
             contents: bytemuck::cast_slice(&uniform_data),
             usage: wgpu::BufferUsages::UNIFORM,
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Transform Sampler"),
+            label: Some("Wipe Sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
-            ..Default::default()
+            ..Default::default(),
         });
 
-        let input_view = input.create_view(&wgpu::TextureViewDescriptor::default());
+        let from_view = from_frame.create_view(&wgpu::TextureViewDescriptor::default());
+        let to_view = to_frame.create_view(&wgpu::TextureViewDescriptor::default());
         let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
 
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Transform Texture Bind Group"),
+            label: Some("Wipe Texture Bind Group"),
             layout: bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&input_view),
+                    resource: wgpu::BindingResource::TextureView(&from_view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&to_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
                     resource: wgpu::BindingResource::Sampler(&sampler),
                 },
             ],
         });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Transform Uniform Bind Group"),
+            label: Some("Wipe Uniform Bind Group"),
             layout: uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -265,12 +222,12 @@ impl Effect for TransformEffect {
         });
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Transform Encoder"),
+            label: Some("Wipe Encoder"),
         });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Transform Render Pass"),
+                label: Some("Wipe Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &output_view,
                     resolve_target: None,
