@@ -187,7 +187,7 @@ impl Effect for TransformEffect {
     }
 
     fn apply(
-        &self,
+        &mut self,
         input: &wgpu::Texture,
         output: &wgpu::Texture,
         params: &HashMap<String, f32>,

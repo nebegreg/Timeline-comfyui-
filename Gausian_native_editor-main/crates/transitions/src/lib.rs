@@ -28,7 +28,7 @@ pub trait Transition: Send + Sync {
     /// * `device` - WGPU device
     /// * `queue` - WGPU queue
     fn render(
-        &self,
+        &mut self,
         from_frame: &wgpu::Texture,
         to_frame: &wgpu::Texture,
         progress: f32,
