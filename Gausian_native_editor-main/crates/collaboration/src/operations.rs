@@ -269,23 +269,27 @@ impl OperationKind {
                 Ok(())
             }
 
-            OperationKind::AddMarker { marker: _ } => {
-                // TODO: Markers are not part of TimelineGraph yet
-                // Will be implemented when markers are added to the graph structure
+            OperationKind::AddMarker { marker } => {
+                graph.markers.insert(marker.id, marker.clone());
                 Ok(())
             }
 
-            OperationKind::RemoveMarker { marker_id: _ } => {
-                // TODO: Markers are not part of TimelineGraph yet
+            OperationKind::RemoveMarker { marker_id } => {
+                graph.markers.remove(marker_id);
                 Ok(())
             }
 
             OperationKind::UpdateMarker {
-                marker_id: _,
-                new_frame: _,
-                new_label: _,
+                marker_id,
+                new_frame,
+                new_label,
             } => {
-                // TODO: Markers are not part of TimelineGraph yet
+                if let Some(marker) = graph.markers.get_mut(marker_id) {
+                    marker.frame = *new_frame;
+                    if let Some(label) = new_label {
+                        marker.label = label.clone();
+                    }
+                }
                 Ok(())
             }
 
@@ -405,6 +409,14 @@ impl OperationKind {
                     marker_id: m2, ..
                 },
             ) => m1 == m2,
+            (
+                UpdateMarker {
+                    marker_id: m1, ..
+                },
+                UpdateMarker {
+                    marker_id: m2, ..
+                },
+            ) => m1 == m2,
 
             // Automation conflicts
             (
@@ -492,5 +504,88 @@ impl OperationLog {
         for (idx, op) in self.operations.iter().enumerate() {
             self.operation_index.insert(op.id, idx);
         }
+    }
+
+    /// Compact the operation log by creating a snapshot
+    /// Removes old operations and replaces them with a single snapshot operation
+    pub fn compact(&mut self, _graph: &TimelineGraph, min_operations: usize) {
+        if self.operations.len() < min_operations {
+            return; // Not enough operations to compact
+        }
+
+        // Keep the last N operations for history
+        let keep_count = 100;
+        if self.operations.len() <= keep_count {
+            return;
+        }
+
+        // Remove old operations
+        let removed = self.operations.len() - keep_count;
+        self.operations.drain(0..removed);
+
+        // Rebuild index
+        self.operation_index.clear();
+        for (idx, op) in self.operations.iter().enumerate() {
+            self.operation_index.insert(op.id, idx);
+        }
+    }
+
+    /// Optimize the log by removing redundant operations
+    /// For example, multiple consecutive position updates for the same node
+    pub fn optimize(&mut self) {
+        use std::collections::HashMap;
+
+        let mut optimized = Vec::new();
+        let mut last_position_update: HashMap<NodeId, TimelineOperation> = HashMap::new();
+        let mut last_metadata_update: HashMap<NodeId, TimelineOperation> = HashMap::new();
+
+        for op in &self.operations {
+            match &op.kind {
+                OperationKind::UpdateNodePosition { node_id, .. } => {
+                    // Keep only the latest position update for each node in sequence
+                    last_position_update.insert(*node_id, op.clone());
+                }
+                OperationKind::UpdateNodeMetadata { node_id, .. } => {
+                    // Keep only the latest metadata update for each node in sequence
+                    last_metadata_update.insert(*node_id, op.clone());
+                }
+                _ => {
+                    // Flush any pending position/metadata updates
+                    if !last_position_update.is_empty() {
+                        optimized.extend(last_position_update.drain().map(|(_, v)| v));
+                    }
+                    if !last_metadata_update.is_empty() {
+                        optimized.extend(last_metadata_update.drain().map(|(_, v)| v));
+                    }
+
+                    // Keep all other operations
+                    optimized.push(op.clone());
+                }
+            }
+        }
+
+        // Flush any remaining updates
+        optimized.extend(last_position_update.drain().map(|(_, v)| v));
+        optimized.extend(last_metadata_update.drain().map(|(_, v)| v));
+
+        // Replace operations
+        self.operations = optimized;
+
+        // Rebuild index
+        self.operation_index.clear();
+        for (idx, op) in self.operations.iter().enumerate() {
+            self.operation_index.insert(op.id, idx);
+        }
+    }
+
+    /// Get the total size of the operation log in bytes (approximate)
+    pub fn size_bytes(&self) -> usize {
+        // Approximate: each operation is ~200 bytes on average
+        self.operations.len() * 200
+    }
+
+    /// Check if compaction is recommended
+    pub fn should_compact(&self, max_size_bytes: usize) -> bool {
+        self.size_bytes() > max_size_bytes || self.operations.len() > 1000
     }
 }

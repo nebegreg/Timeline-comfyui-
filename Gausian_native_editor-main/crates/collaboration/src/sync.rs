@@ -66,8 +66,8 @@ pub enum SyncMessage {
 
 /// Client-side sync manager
 pub struct SyncClient {
-    session_id: SessionId,
-    user_id: UserId,
+    _session_id: SessionId,
+    _user_id: UserId,
     vector_clock: VectorClock,
     pending_operations: Vec<TimelineOperation>,
     tx: mpsc::UnboundedSender<SyncMessage>,
@@ -79,8 +79,8 @@ impl SyncClient {
         let (tx, rx) = mpsc::unbounded_channel();
 
         Self {
-            session_id,
-            user_id,
+            _session_id: session_id,
+            _user_id: user_id,
             vector_clock: VectorClock::new(),
             pending_operations: Vec::new(),
             tx,
@@ -243,7 +243,7 @@ struct Session {
     id: SessionId,
     users: HashMap<UserId, mpsc::UnboundedSender<SyncMessage>>,
     operation_log: crate::OperationLog,
-    vector_clock: VectorClock,
+    _vector_clock: VectorClock,
 }
 
 impl Session {
@@ -252,7 +252,7 @@ impl Session {
             id,
             users: HashMap::new(),
             operation_log: crate::OperationLog::new(),
-            vector_clock: VectorClock::new(),
+            _vector_clock: VectorClock::new(),
         }
     }
 

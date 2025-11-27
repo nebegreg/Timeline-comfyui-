@@ -1232,6 +1232,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "collab-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "collaboration",
+ "futures",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "timeline",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
+ "tracing-subscriber",
+ "tungstenite",
+ "uuid",
+]
+
+[[package]]
 name = "collaboration"
 version = "0.1.0"
 dependencies = [

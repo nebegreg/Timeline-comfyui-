@@ -239,6 +239,8 @@ pub struct TimelineGraph {
     #[serde(default)]
     pub automation: Vec<AutomationLane>,
     #[serde(default)]
+    pub markers: std::collections::HashMap<crate::markers::MarkerId, crate::markers::Marker>,
+    #[serde(default)]
     pub metadata: serde_json::Value,
 }
 
@@ -250,6 +252,7 @@ impl Default for TimelineGraph {
             edges: Vec::new(),
             tracks: Vec::new(),
             automation: Vec::new(),
+            markers: std::collections::HashMap::new(),
             metadata: serde_json::Value::Null,
         }
     }

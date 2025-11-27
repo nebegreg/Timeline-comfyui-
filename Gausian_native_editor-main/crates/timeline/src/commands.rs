@@ -457,7 +457,7 @@ pub fn migrate_sequence_tracks(sequence: &crate::Sequence) -> TimelineGraph {
         result.metadata = sequence.graph.metadata.clone();
     }
 
-    for (track_index, legacy_track) in sequence.tracks.iter().enumerate() {
+    for (_track_index, legacy_track) in sequence.tracks.iter().enumerate() {
         let track_id = TrackId::new();
         let mut binding = TrackBinding {
             id: track_id,
