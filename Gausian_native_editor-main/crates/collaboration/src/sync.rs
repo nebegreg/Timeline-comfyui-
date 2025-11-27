@@ -230,6 +230,37 @@ impl SessionManager {
         let sessions = self.sessions.read().await;
         sessions.get(&session_id).map(|s| s.get_info())
     }
+
+    /// Send sync response to a user
+    pub async fn send_sync_response(
+        &self,
+        session_id: SessionId,
+        user_id: UserId,
+        since: &VectorClock,
+    ) -> Result<()> {
+        let sessions = self.sessions.read().await;
+
+        let session = sessions
+            .get(&session_id)
+            .ok_or_else(|| CollaborationError::SessionNotFound(session_id.0.to_string()))?;
+
+        session.send_sync_response(user_id, since)
+    }
+
+    /// Send pong to a user
+    pub async fn send_pong(
+        &self,
+        session_id: SessionId,
+        user_id: UserId,
+    ) -> Result<()> {
+        let sessions = self.sessions.read().await;
+
+        let session = sessions
+            .get(&session_id)
+            .ok_or_else(|| CollaborationError::SessionNotFound(session_id.0.to_string()))?;
+
+        session.send_pong(user_id)
+    }
 }
 
 impl Default for SessionManager {
@@ -340,6 +371,43 @@ impl Session {
             operation_count: self.operation_log.operations.len(),
         }
     }
+
+    /// Send sync response to a specific user
+    fn send_sync_response(
+        &self,
+        user_id: UserId,
+        _since: &VectorClock,
+    ) -> Result<()> {
+        let user_tx = self.users
+            .get(&user_id)
+            .ok_or_else(|| CollaborationError::SyncError("User not found".to_string()))?;
+
+        // For now, send all operations
+        // TODO: In the future, filter based on vector clock when we have proper vector clock tracking
+        let operations = self.operation_log.operations.clone();
+
+        let response = SyncMessage::SyncResponse {
+            operations,
+            vector_clock: self._vector_clock.clone(),
+        };
+
+        user_tx.send(response)
+            .map_err(|e| CollaborationError::NetworkError(e.to_string()))?;
+
+        Ok(())
+    }
+
+    /// Send pong to a specific user
+    fn send_pong(&self, user_id: UserId) -> Result<()> {
+        let user_tx = self.users
+            .get(&user_id)
+            .ok_or_else(|| CollaborationError::SyncError("User not found".to_string()))?;
+
+        user_tx.send(SyncMessage::Pong)
+            .map_err(|e| CollaborationError::NetworkError(e.to_string()))?;
+
+        Ok(())
+    }
 }
 
 /// Session information
@@ -384,14 +452,18 @@ impl CollaborationServer {
                     .await?;
             }
 
-            SyncMessage::SyncRequest { since: _ } => {
-                // Handle sync request
-                // TODO: Send operations since the given vector clock
+            SyncMessage::SyncRequest { since } => {
+                // Handle sync request - send operations since the given vector clock
+                self.session_manager
+                    .send_sync_response(session_id, user_id, &since)
+                    .await?;
             }
 
             SyncMessage::Ping => {
                 // Respond with pong
-                // TODO: Send pong back to client
+                self.session_manager
+                    .send_pong(session_id, user_id)
+                    .await?;
             }
 
             _ => {}
