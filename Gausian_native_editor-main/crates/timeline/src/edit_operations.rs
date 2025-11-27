@@ -1,6 +1,5 @@
 /// Advanced edit operations for professional timeline editing
 /// Phase 1: Timeline Polish & UX - Complete Implementation
-
 use crate::{Frame, FrameRange, NodeId, TimelineGraph, TimelineNodeKind, TrackId};
 
 /// Ripple edit: Move clip and shift all following clips on the same track
@@ -382,7 +381,10 @@ mod tests {
             kind: TimelineNodeKind::Clip(ClipNode {
                 asset_id: Some("test.mp4".to_string()),
                 // Give plenty of media duration for roll edits (3x the timeline duration)
-                media_range: FrameRange { start: 0, duration: duration * 3 },
+                media_range: FrameRange {
+                    start: 0,
+                    duration: duration * 3,
+                },
                 timeline_range: FrameRange { start, duration },
                 playback_rate: 1.0,
                 reverse: false,

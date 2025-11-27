@@ -1,6 +1,5 @@
 /// Professional edit modes for timeline
 /// Phase 1: Timeline Polish & UX Improvements
-
 use serde::{Deserialize, Serialize};
 
 /// Edit mode determines how timeline editing operations behave

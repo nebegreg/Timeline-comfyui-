@@ -1,6 +1,5 @@
 /// Phase 7: Collaborative Editing Infrastructure
 /// Real-time multi-user timeline collaboration using CRDT
-
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

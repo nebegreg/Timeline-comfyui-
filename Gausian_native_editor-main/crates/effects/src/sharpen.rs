@@ -1,6 +1,5 @@
 /// Sharpen/Unsharp Mask effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -157,7 +156,7 @@ impl Effect for SharpenEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();

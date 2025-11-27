@@ -1542,6 +1542,16 @@ struct App {
 
     /// Rectangle selection state (for drag selection)
     rect_selection: Option<crate::selection::RectSelection>,
+
+    // ═══════════════════════════════════════════════════════════
+    // Phase 5: Plugin Marketplace
+    // ═══════════════════════════════════════════════════════════
+
+    /// Marketplace UI state
+    marketplace_ui: crate::marketplace_ui::MarketplaceUI,
+
+    /// Marketplace async manager
+    marketplace_manager: Option<crate::marketplace_manager::MarketplaceManager>,
 }
 
 struct PendingTimelineDrop {
@@ -1638,6 +1648,94 @@ impl App {
             }
         }
     }
+
+    // Phase 5: Plugin Marketplace - Response handler
+    fn handle_marketplace_response(&mut self, response: crate::marketplace_manager::MarketplaceResponse) {
+        use crate::marketplace_manager::MarketplaceResponse;
+        use crate::marketplace_ui::ConnectionStatus;
+
+        match response {
+            MarketplaceResponse::SearchResults(results) => {
+                tracing::info!("Received {} search results", results.plugins.len());
+                self.marketplace_ui.results = Some(crate::marketplace_ui::SearchResults {
+                    plugins: results.plugins.into_iter().map(|p| crate::marketplace_ui::MarketplacePlugin {
+                        id: p.id,
+                        name: p.name,
+                        description: p.description,
+                        long_description: p.long_description,
+                        version: p.version,
+                        author: p.author,
+                        plugin_type: p.plugin_type,
+                        category: p.category,
+                        tags: p.tags,
+                        downloads: p.downloads,
+                        rating: p.rating,
+                        rating_count: p.rating_count,
+                        verified: p.verified,
+                        file_size: p.file_size,
+                        license: p.license,
+                    }).collect(),
+                    total: results.total,
+                    page: results.page,
+                    pages: results.pages,
+                });
+                self.marketplace_ui.connection_status = ConnectionStatus::Connected;
+            }
+
+            MarketplaceResponse::InstallProgress { plugin_id, progress } => {
+                tracing::info!("Plugin {} install progress: {:.0}%", plugin_id, progress * 100.0);
+                // Progress indication is already handled by self.marketplace_ui.installing
+            }
+
+            MarketplaceResponse::InstallComplete { plugin_id, success, error } => {
+                self.marketplace_ui.installing = None;
+                if success {
+                    self.marketplace_ui.installed_plugins.insert(plugin_id.clone(), "1.0.0".to_string());
+                    tracing::info!("Plugin {} installed successfully", plugin_id);
+                } else {
+                    let err_msg = error.unwrap_or_else(|| "Unknown error".to_string());
+                    tracing::error!("Plugin {} install failed: {}", plugin_id, err_msg);
+                    self.marketplace_ui.connection_status = ConnectionStatus::Error(err_msg);
+                }
+            }
+
+            MarketplaceResponse::PluginDetails(plugin) => {
+                self.marketplace_ui.selected_plugin = Some(crate::marketplace_ui::MarketplacePlugin {
+                    id: plugin.id,
+                    name: plugin.name,
+                    description: plugin.description,
+                    long_description: plugin.long_description,
+                    version: plugin.version,
+                    author: plugin.author,
+                    plugin_type: plugin.plugin_type,
+                    category: plugin.category,
+                    tags: plugin.tags,
+                    downloads: plugin.downloads,
+                    rating: plugin.rating,
+                    rating_count: plugin.rating_count,
+                    verified: plugin.verified,
+                    file_size: plugin.file_size,
+                    license: plugin.license,
+                });
+            }
+
+            MarketplaceResponse::FeaturedPlugins(plugins) => {
+                tracing::info!("Received {} featured plugins", plugins.len());
+                // Could display these in a featured section
+            }
+
+            MarketplaceResponse::UpdatesAvailable(updates) => {
+                tracing::info!("{} plugin updates available", updates.len());
+                // Could show notification badge
+            }
+
+            MarketplaceResponse::Error { message } => {
+                tracing::error!("Marketplace error: {}", message);
+                self.marketplace_ui.connection_status = ConnectionStatus::Error(message);
+            }
+        }
+    }
+
     fn handle_external_file_drops(&mut self, ctx: &egui::Context) {
         let dropped = ctx.input(|i| i.raw.dropped_files.clone());
         if dropped.is_empty() {
@@ -5575,6 +5673,10 @@ Use one of the keys listed above. Populate the \"inputs\" object with values for
             markers: timeline::MarkerCollection::new(),
             playback_speed: PlaybackSpeed::default(),
             rect_selection: None,
+
+            // Phase 5: Plugin Marketplace
+            marketplace_ui: crate::marketplace_ui::MarketplaceUI::new(),
+            marketplace_manager: None,
         };
         let (chat_tx, chat_rx) = unbounded();
         app.chat_event_tx = chat_tx;
@@ -5592,6 +5694,17 @@ Use one of the keys listed above. Populate the \"inputs\" object with values for
         app.refresh_storyboard_workflows();
         app.load_storyboard_from_settings();
         app.sync_tracks_from_graph();
+
+        // Phase 5: Initialize marketplace manager
+        app.marketplace_manager = Some(crate::marketplace_manager::MarketplaceManager::new(
+            "http://127.0.0.1:3000".to_string()
+        ));
+
+        // Connect marketplace UI to manager
+        if let Some(manager) = &app.marketplace_manager {
+            app.marketplace_ui.set_command_sender(manager.get_sender());
+        }
+
         app
     }
 
@@ -5618,6 +5731,15 @@ impl eframe::App for App {
         while let Ok(ev) = self.cache_events.try_recv() {
             self.handle_cache_event(ev);
         }
+
+        // Phase 5: Poll marketplace responses
+        if let Some(manager) = &self.marketplace_manager {
+            let responses = manager.poll_responses();
+            for response in responses {
+                self.handle_marketplace_response(response);
+            }
+        }
+
         while let Ok(ev) = self.screenplay_event_rx.try_recv() {
             self.screenplay_handle_event(ev);
         }
@@ -6892,6 +7014,9 @@ impl eframe::App for App {
         if matches!(self.workspace_view, WorkspaceView::Timeline) {
             app_ui::preview_settings_window(self, ctx);
             app_screenplay::screenplay_window(self, ctx);
+
+            // Phase 5: Plugin Marketplace
+            self.marketplace_ui.render(ctx);
         }
 
         if app_ui::show_project_picker_if_needed(self, ctx) {

@@ -1,7 +1,6 @@
 /// Color Wheels Effect
 /// Separate color correction for Shadows, Midtones, and Highlights
 /// Phase 2: Advanced Color Correction
-
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
 use std::collections::HashMap;
@@ -40,10 +39,10 @@ struct ColorWheelsUniforms {
     _padding3: f32,
 
     // Range thresholds
-    shadow_max: f32,      // Luminance below this = shadows
-    highlight_min: f32,   // Luminance above this = highlights
-    blend_width: f32,     // Smooth transition width
-    intensity: f32,       // Overall effect strength
+    shadow_max: f32,    // Luminance below this = shadows
+    highlight_min: f32, // Luminance above this = highlights
+    blend_width: f32,   // Smooth transition width
+    intensity: f32,     // Overall effect strength
 }
 
 impl ColorWheelsEffect {
@@ -80,37 +79,39 @@ impl ColorWheelsEffect {
         }));
 
         // Bind group layout
-        self.bind_group_layout = Some(device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Color Wheels Bind Group Layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+        self.bind_group_layout = Some(device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("Color Wheels Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        }));
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+            },
+        ));
 
         // Shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -125,31 +126,33 @@ impl ColorWheelsEffect {
             push_constant_ranges: &[],
         });
 
-        self.pipeline = Some(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Color Wheels Pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[],
-                compilation_options: Default::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: Default::default(),
+        self.pipeline = Some(
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Color Wheels Pipeline"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                    compilation_options: Default::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: Default::default(),
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+                cache: None,
             }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-            cache: None,
-        }));
+        );
     }
 }
 
@@ -192,7 +195,6 @@ impl Effect for ColorWheelsEffect {
                 max: 0.5,
                 description: "Luminance offset for shadows (lift)".to_string(),
             },
-
             // Midtones
             EffectParameter {
                 name: "midtones_hue".to_string(),
@@ -221,7 +223,6 @@ impl Effect for ColorWheelsEffect {
                 max: 3.0,
                 description: "Gamma correction for midtones".to_string(),
             },
-
             // Highlights
             EffectParameter {
                 name: "highlights_hue".to_string(),
@@ -250,7 +251,6 @@ impl Effect for ColorWheelsEffect {
                 max: 2.0,
                 description: "Luminance multiplier for highlights (gain)".to_string(),
             },
-
             // Range controls
             EffectParameter {
                 name: "shadow_max".to_string(),
@@ -339,7 +339,7 @@ impl Effect for ColorWheelsEffect {
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(
-                        &input.create_view(&Default::default())
+                        &input.create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {

@@ -3,11 +3,10 @@
 ///
 /// Integrates with Replicate API for cloud-based LORA training
 /// Supports models like kohya-ss's LoRA training
-
 use super::{BackendConfig, BackendType, TrainingBackend};
 use crate::dataset::Dataset;
 use crate::lora_config::LoraConfig;
-use crate::training::{JobId, TrainingProgress, JobStatus};
+use crate::training::{JobId, JobStatus, TrainingProgress};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -61,7 +60,8 @@ impl ReplicateBackend {
             },
         };
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.replicate.com/v1/predictions")
             .header("Authorization", format!("Token {}", self.api_key))
             .json(&request)
@@ -82,7 +82,8 @@ impl ReplicateBackend {
 
     /// Get prediction status
     async fn get_prediction(&self, prediction_id: &str) -> Result<PredictionResponse> {
-        let response = self.client
+        let response = self
+            .client
             .get(format!(
                 "https://api.replicate.com/v1/predictions/{}",
                 prediction_id
@@ -129,7 +130,8 @@ impl TrainingBackend for ReplicateBackend {
 
     async fn is_available(&self) -> Result<bool> {
         // Try a simple API call to verify credentials
-        match self.client
+        match self
+            .client
             .get("https://api.replicate.com/v1/account")
             .header("Authorization", format!("Token {}", self.api_key))
             .send()
@@ -271,8 +273,7 @@ impl TrainingBackend for ReplicateBackend {
 
 /// Replicate API model version for LoRA training
 /// This is the kohya-ss LoRA trainer model on Replicate
-const LORA_TRAINER_VERSION: &str =
-    "7c7a0dda-bf78-4e6b-a0fa-fd0c5d6cf0f1"; // Example version ID
+const LORA_TRAINER_VERSION: &str = "7c7a0dda-bf78-4e6b-a0fa-fd0c5d6cf0f1"; // Example version ID
 
 /// Prediction request for Replicate
 #[derive(Debug, Serialize)]
@@ -320,11 +321,8 @@ mod tests {
 
     #[test]
     fn test_replicate_backend_creation() {
-        let config = BackendConfig::new(
-            BackendType::Replicate,
-            PathBuf::from("/tmp/lora"),
-        )
-        .with_api_key("test-key-123".to_string());
+        let config = BackendConfig::new(BackendType::Replicate, PathBuf::from("/tmp/lora"))
+            .with_api_key("test-key-123".to_string());
 
         let backend = ReplicateBackend::new(config).unwrap();
         assert_eq!(backend.name(), "Replicate");

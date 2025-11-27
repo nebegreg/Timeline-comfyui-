@@ -1,13 +1,10 @@
 /// Phase 7: Collaborative Editing UI Components
 /// Real-time presence indicators, cursors, selections, and user management
-
 use collaboration::{
-    CursorPosition, PresenceUpdate, Selection, SessionId, SyncMessage, User, UserId,
-    UserPresence, Viewport,
+    CursorPosition, PresenceUpdate, Selection, SessionId, SyncMessage, User, UserId, UserPresence,
+    Viewport,
 };
-use egui::{
-    Align2, Color32, FontId, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2,
-};
+use egui::{Align2, Color32, FontId, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
 use std::collections::HashMap;
 
 /// Collaboration UI state
@@ -94,10 +91,7 @@ impl CollabUI {
                 let cursor_height = timeline_rect.height();
 
                 ui.painter().line_segment(
-                    [
-                        cursor_pos,
-                        cursor_pos + Vec2::new(0.0, cursor_height),
-                    ],
+                    [cursor_pos, cursor_pos + Vec2::new(0.0, cursor_height)],
                     Stroke::new(2.0, color),
                 );
 
@@ -138,19 +132,12 @@ impl CollabUI {
                 for node_id in &selection.node_ids {
                     if let Some(rect) = node_rects.get(node_id) {
                         // Draw selection outline
-                        ui.painter().rect_stroke(
-                            *rect,
-                            3.0,
-                            Stroke::new(2.0, color),
-                        );
+                        ui.painter()
+                            .rect_stroke(*rect, 3.0, Stroke::new(2.0, color));
 
                         // Draw small user indicator in corner
                         let indicator_pos = rect.right_top() + Vec2::new(-20.0, 4.0);
-                        ui.painter().circle_filled(
-                            indicator_pos,
-                            6.0,
-                            color,
-                        );
+                        ui.painter().circle_filled(indicator_pos, 6.0, color);
 
                         // User initial
                         let initial = state.user.name.chars().next().unwrap_or('?');
@@ -206,10 +193,8 @@ impl CollabUI {
                         ui.horizontal(|ui| {
                             // Color indicator
                             let color = user_color_to_egui(&state.user.color);
-                            let (rect, _) = ui.allocate_exact_size(
-                                Vec2::new(12.0, 12.0),
-                                Sense::hover(),
-                            );
+                            let (rect, _) =
+                                ui.allocate_exact_size(Vec2::new(12.0, 12.0), Sense::hover());
                             ui.painter().circle_filled(rect.center(), 6.0, color);
 
                             // User name
@@ -263,9 +248,11 @@ impl CollabUI {
                     format!("{} users connected", user_count),
                 )
             }
-            ConnectionStatus::Connecting => {
-                ("⟳".to_string(), Color32::YELLOW, "Connecting...".to_string())
-            }
+            ConnectionStatus::Connecting => (
+                "⟳".to_string(),
+                Color32::YELLOW,
+                "Connecting...".to_string(),
+            ),
             ConnectionStatus::Disconnected => {
                 ("●".to_string(), Color32::GRAY, "Disconnected".to_string())
             }
@@ -313,9 +300,8 @@ impl CollabUI {
     /// Cleanup stale users (no updates in 60 seconds)
     pub fn cleanup_stale_users(&mut self) {
         let now = std::time::Instant::now();
-        self.remote_users.retain(|_, state| {
-            now.duration_since(state.last_update).as_secs() < 60
-        });
+        self.remote_users
+            .retain(|_, state| now.duration_since(state.last_update).as_secs() < 60);
     }
 }
 
@@ -408,8 +394,9 @@ impl ConflictDialog {
                                 conflict.resolution = ConflictResolution::Manual;
                             }
 
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                match &conflict.resolution {
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| match &conflict.resolution {
                                     ConflictResolution::Pending => {
                                         ui.colored_label(Color32::YELLOW, "⏸ Pending");
                                     }
@@ -422,8 +409,8 @@ impl ConflictDialog {
                                     ConflictResolution::Manual => {
                                         ui.colored_label(Color32::ORANGE, "⚠ Manual");
                                     }
-                                }
-                            });
+                                },
+                            );
                         });
                     });
 
@@ -434,7 +421,11 @@ impl ConflictDialog {
 
                 ui.horizontal(|ui| {
                     if ui.button("Apply Resolutions").clicked() {
-                        resolutions = self.conflicts.iter().map(|c| c.resolution.clone()).collect();
+                        resolutions = self
+                            .conflicts
+                            .iter()
+                            .map(|c| c.resolution.clone())
+                            .collect();
                         self.show = false;
                         self.conflicts.clear();
                     }

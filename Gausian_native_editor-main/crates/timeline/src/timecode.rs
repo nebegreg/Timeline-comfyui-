@@ -1,7 +1,6 @@
 /// Professional timecode display system with drop-frame support
 /// Phase 1: Timeline Polish & UX - Complete Implementation
-
-use crate::{Frame, Fps};
+use crate::{Fps, Frame};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -45,8 +44,8 @@ impl Timecode {
             TimecodeFormat::DropFrame => {
                 // Drop frame calculation for 29.97 and 59.94 fps
                 // Drop 2 frames at the start of every minute except every 10th minute
-                let is_drop_fps = (fps.num == 30000 && fps.den == 1001)
-                    || (fps.num == 60000 && fps.den == 1001);
+                let is_drop_fps =
+                    (fps.num == 30000 && fps.den == 1001) || (fps.num == 60000 && fps.den == 1001);
 
                 if is_drop_fps {
                     let drop_frames = if fps.num == 30000 { 2 } else { 4 };
@@ -66,7 +65,8 @@ impl Timecode {
                     } else {
                         let remainder_after_first_min = remainder - frames_first_minute;
                         let frames_per_normal_min = fps_rounded * 60 - drop_frames;
-                        let additional_minutes = 1 + (remainder_after_first_min / frames_per_normal_min);
+                        let additional_minutes =
+                            1 + (remainder_after_first_min / frames_per_normal_min);
                         let frames_in_current_min =
                             remainder_after_first_min % frames_per_normal_min;
 
@@ -122,8 +122,8 @@ impl Timecode {
 
         match self.format {
             TimecodeFormat::DropFrame => {
-                let is_drop_fps = (fps.num == 30000 && fps.den == 1001)
-                    || (fps.num == 60000 && fps.den == 1001);
+                let is_drop_fps =
+                    (fps.num == 30000 && fps.den == 1001) || (fps.num == 60000 && fps.den == 1001);
 
                 if is_drop_fps {
                     let drop_frames = if fps.num == 30000 { 2 } else { 4 };
@@ -159,7 +159,8 @@ impl Timecode {
     }
 
     fn to_frame_non_drop(&self, fps: i64) -> Frame {
-        let total_seconds = self.hours as i64 * 3600 + self.minutes as i64 * 60 + self.seconds as i64;
+        let total_seconds =
+            self.hours as i64 * 3600 + self.minutes as i64 * 60 + self.seconds as i64;
         total_seconds * fps + self.frames as i64
     }
 

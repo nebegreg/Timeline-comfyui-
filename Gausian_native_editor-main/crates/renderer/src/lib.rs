@@ -402,8 +402,8 @@ impl Renderer {
     pub fn yuv_to_rgb(
         &self,
         y_texture: &wgpu::Texture,
-        u_texture: &wgpu::Texture,
-        v_texture: &wgpu::Texture,
+        _u_texture: &wgpu::Texture,
+        _v_texture: &wgpu::Texture,
         output: &wgpu::TextureView,
         color_space: ColorSpace,
     ) -> Result<()> {
@@ -496,7 +496,7 @@ impl Renderer {
         &self,
         input: &wgpu::TextureView,
         output: &wgpu::TextureView,
-        scale_factor: f32,
+        _scale_factor: f32,
         filter_mode: FilterMode,
     ) -> Result<()> {
         let mut encoder = self
@@ -565,11 +565,11 @@ impl Renderer {
     /// Blend two textures with specified blend mode and opacity
     pub fn blend_textures(
         &self,
-        base: &wgpu::TextureView,
-        overlay: &wgpu::TextureView,
-        output: &wgpu::TextureView,
-        blend_mode: BlendMode,
-        opacity: f32,
+        _base: &wgpu::TextureView,
+        _overlay: &wgpu::TextureView,
+        _output: &wgpu::TextureView,
+        _blend_mode: BlendMode,
+        _opacity: f32,
     ) -> Result<()> {
         // Implementation would create appropriate bind groups and render pass
         // Similar to scale_texture but with blend-specific uniforms
@@ -579,9 +579,9 @@ impl Renderer {
     /// Apply transform matrix to texture
     pub fn transform_texture(
         &self,
-        input: &wgpu::TextureView,
-        output: &wgpu::TextureView,
-        transform: &TransformUniforms,
+        _input: &wgpu::TextureView,
+        _output: &wgpu::TextureView,
+        _transform: &TransformUniforms,
     ) -> Result<()> {
         // Implementation similar to other operations
         Ok(())
@@ -824,23 +824,26 @@ pub enum BlendMode {
 
 /// CPU fallback renderer for systems without adequate GPU support
 pub struct CpuRenderer {
-    width: u32,
-    height: u32,
+    _width: u32,
+    _height: u32,
 }
 
 impl CpuRenderer {
     pub fn new(width: u32, height: u32) -> Self {
-        Self { width, height }
+        Self {
+            _width: width,
+            _height: height,
+        }
     }
 
     /// Software YUV to RGB conversion
     pub fn yuv_to_rgb_cpu(
         &self,
-        y_plane: &[u8],
-        u_plane: &[u8],
-        v_plane: &[u8],
-        output: &mut [u8],
-        color_space: ColorSpace,
+        _y_plane: &[u8],
+        _u_plane: &[u8],
+        _v_plane: &[u8],
+        _output: &mut [u8],
+        _color_space: ColorSpace,
     ) -> Result<()> {
         // Software implementation of YUV to RGB conversion
         // This would be much slower but provides fallback capability
@@ -850,12 +853,12 @@ impl CpuRenderer {
     /// Software scaling with bilinear interpolation
     pub fn scale_cpu(
         &self,
-        input: &[u8],
-        input_width: u32,
-        input_height: u32,
-        output: &mut [u8],
-        output_width: u32,
-        output_height: u32,
+        _input: &[u8],
+        _input_width: u32,
+        _input_height: u32,
+        _output: &mut [u8],
+        _output_width: u32,
+        _output_height: u32,
     ) -> Result<()> {
         // Software bilinear scaling implementation
         Ok(())
@@ -864,11 +867,11 @@ impl CpuRenderer {
     /// Software alpha blending
     pub fn blend_cpu(
         &self,
-        base: &[u8],
-        overlay: &[u8],
-        output: &mut [u8],
-        blend_mode: BlendMode,
-        opacity: f32,
+        _base: &[u8],
+        _overlay: &[u8],
+        _output: &mut [u8],
+        _blend_mode: BlendMode,
+        _opacity: f32,
     ) -> Result<()> {
         // Software blending implementation
         Ok(())

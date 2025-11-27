@@ -1,6 +1,5 @@
 /// Simple JSON-based storage for marketplace data
 /// In production, this would use a proper database
-
 use crate::models::*;
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -148,9 +147,8 @@ impl MarketplaceStorage {
         let ratings_lock = self.ratings.read();
         if let Some(plugin_ratings) = ratings_lock.get(plugin_id) {
             if !plugin_ratings.is_empty() {
-                let avg_rating: f32 =
-                    plugin_ratings.iter().map(|r| r.rating as f32).sum::<f32>()
-                        / plugin_ratings.len() as f32;
+                let avg_rating: f32 = plugin_ratings.iter().map(|r| r.rating as f32).sum::<f32>()
+                    / plugin_ratings.len() as f32;
                 let rating_count = plugin_ratings.len() as i32;
 
                 drop(ratings_lock);

@@ -38,7 +38,8 @@ impl Session {
 
     fn add_user(&mut self, user: User, tx: Tx) {
         let user_id = user.id;
-        self.users.insert(user_id, UserConnection { _user: user, tx });
+        self.users
+            .insert(user_id, UserConnection { _user: user, tx });
     }
 
     fn remove_user(&mut self, user_id: &UserId) {
@@ -126,14 +127,8 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr, sessions: Sessio
 
         match msg {
             Message::Text(text) => {
-                let result = handle_sync_message(
-                    &text,
-                    &sessions,
-                    &tx,
-                    &mut session_id,
-                    &mut user_id,
-                )
-                .await;
+                let result =
+                    handle_sync_message(&text, &sessions, &tx, &mut session_id, &mut user_id).await;
 
                 if let Err(e) = result {
                     error!("Error handling message: {}", e);
@@ -235,17 +230,19 @@ async fn handle_sync_message(
         }
 
         SyncMessage::Operation { operation } => {
-            let session_id = current_session.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("Not connected to any session")
-            })?;
+            let session_id = current_session
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Not connected to any session"))?;
 
             let mut sessions_lock = sessions.write().await;
-            let session = sessions_lock.get_mut(session_id).ok_or_else(|| {
-                anyhow::anyhow!("Session not found")
-            })?;
+            let session = sessions_lock
+                .get_mut(session_id)
+                .ok_or_else(|| anyhow::anyhow!("Session not found"))?;
 
             // Apply operation to CRDT
-            session.crdt.apply_remote_operation(operation.clone())
+            session
+                .crdt
+                .apply_remote_operation(operation.clone())
                 .map_err(|e| anyhow::anyhow!("Failed to apply operation: {}", e))?;
 
             // Broadcast to all other users
@@ -265,14 +262,14 @@ async fn handle_sync_message(
         }
 
         SyncMessage::SyncRequest { since } => {
-            let session_id = current_session.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("Not connected to any session")
-            })?;
+            let session_id = current_session
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Not connected to any session"))?;
 
             let sessions_lock = sessions.read().await;
-            let session = sessions_lock.get(session_id).ok_or_else(|| {
-                anyhow::anyhow!("Session not found")
-            })?;
+            let session = sessions_lock
+                .get(session_id)
+                .ok_or_else(|| anyhow::anyhow!("Session not found"))?;
 
             let operations = session.crdt.get_operations_since(&since);
             let vector_clock = session.crdt.vector_clock.clone();
@@ -286,14 +283,14 @@ async fn handle_sync_message(
         }
 
         SyncMessage::Presence { update } => {
-            let session_id = current_session.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("Not connected to any session")
-            })?;
+            let session_id = current_session
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Not connected to any session"))?;
 
             let sessions_lock = sessions.read().await;
-            let session = sessions_lock.get(session_id).ok_or_else(|| {
-                anyhow::anyhow!("Session not found")
-            })?;
+            let session = sessions_lock
+                .get(session_id)
+                .ok_or_else(|| anyhow::anyhow!("Session not found"))?;
 
             // Broadcast presence update to all users
             let broadcast_msg = SyncMessage::Presence { update };

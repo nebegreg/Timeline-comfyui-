@@ -1,8 +1,7 @@
 /// Phase 7: Collaborative Editing - Integration Tests
 /// Tests for multi-user scenarios, conflict resolution, and network recovery
-
 use collaboration::*;
-use timeline::{Marker, NodeId, TimelineNode, TimelineNodeKind, ClipNode, FrameRange};
+use timeline::{ClipNode, FrameRange, Marker, NodeId, TimelineNode, TimelineNodeKind};
 
 #[tokio::test]
 async fn test_two_users_basic_editing() {
@@ -21,8 +20,14 @@ async fn test_two_users_basic_editing() {
         label: Some("Clip 1".to_string()),
         kind: TimelineNodeKind::Clip(ClipNode {
             asset_id: Some("/test/clip1.mp4".to_string()),
-            timeline_range: FrameRange { start: 0, duration: 100 },
-            media_range: FrameRange { start: 0, duration: 100 },
+            timeline_range: FrameRange {
+                start: 0,
+                duration: 100,
+            },
+            media_range: FrameRange {
+                start: 0,
+                duration: 100,
+            },
             playback_rate: 1.0,
             reverse: false,
             metadata: serde_json::Value::Null,
@@ -31,9 +36,9 @@ async fn test_two_users_basic_editing() {
         metadata: serde_json::Value::Null,
     };
 
-    let op1 = user1.apply_local_operation(OperationKind::AddNode {
-        node: clip.clone(),
-    }).unwrap();
+    let op1 = user1
+        .apply_local_operation(OperationKind::AddNode { node: clip.clone() })
+        .unwrap();
 
     // User 2 receives the operation
     user2.apply_remote_operation(op1.clone()).unwrap();
@@ -54,15 +59,19 @@ async fn test_concurrent_marker_additions() {
 
     // User 1 adds a marker at frame 100
     let marker1 = Marker::new(100, "User 1 Marker".to_string());
-    let op1 = user1.apply_local_operation(OperationKind::AddMarker {
-        marker: marker1.clone(),
-    }).unwrap();
+    let op1 = user1
+        .apply_local_operation(OperationKind::AddMarker {
+            marker: marker1.clone(),
+        })
+        .unwrap();
 
     // User 2 adds a marker at frame 200
     let marker2 = Marker::new(200, "User 2 Marker".to_string());
-    let op2 = user2.apply_local_operation(OperationKind::AddMarker {
-        marker: marker2.clone(),
-    }).unwrap();
+    let op2 = user2
+        .apply_local_operation(OperationKind::AddMarker {
+            marker: marker2.clone(),
+        })
+        .unwrap();
 
     // Exchange operations
     user2.apply_remote_operation(op1).unwrap();
@@ -86,26 +95,32 @@ async fn test_conflict_resolution_last_write_wins() {
 
     // Both users add the same marker through proper operations
     let marker = Marker::new(100, "Original".to_string());
-    let add_op = user1.apply_local_operation(OperationKind::AddMarker {
-        marker: marker.clone(),
-    }).unwrap();
+    let add_op = user1
+        .apply_local_operation(OperationKind::AddMarker {
+            marker: marker.clone(),
+        })
+        .unwrap();
 
     // User 2 receives the add operation
     user2.apply_remote_operation(add_op).unwrap();
 
     // Now both users have the marker. User 1 updates it
-    let op1 = user1.apply_local_operation(OperationKind::UpdateMarker {
-        marker_id: marker.id,
-        new_frame: 150,
-        new_label: Some("User 1 Update".to_string()),
-    }).unwrap();
+    let op1 = user1
+        .apply_local_operation(OperationKind::UpdateMarker {
+            marker_id: marker.id,
+            new_frame: 150,
+            new_label: Some("User 1 Update".to_string()),
+        })
+        .unwrap();
 
     // User 2 also updates the marker (conflict!)
-    let op2 = user2.apply_local_operation(OperationKind::UpdateMarker {
-        marker_id: marker.id,
-        new_frame: 200,
-        new_label: Some("User 2 Update".to_string()),
-    }).unwrap();
+    let op2 = user2
+        .apply_local_operation(OperationKind::UpdateMarker {
+            marker_id: marker.id,
+            new_frame: 200,
+            new_label: Some("User 2 Update".to_string()),
+        })
+        .unwrap();
 
     // Detect conflict
     assert!(op1.kind.conflicts_with(&op2.kind));
@@ -128,7 +143,8 @@ async fn test_operation_log_compaction() {
     // Add many operations
     for i in 0..150 {
         let marker = Marker::new(i as i64, format!("Marker {}", i));
-        crdt.apply_local_operation(OperationKind::AddMarker { marker }).unwrap();
+        crdt.apply_local_operation(OperationKind::AddMarker { marker })
+            .unwrap();
     }
 
     assert_eq!(crdt.operation_log.operations.len(), 150);
@@ -155,8 +171,14 @@ async fn test_operation_log_optimization() {
         label: Some("Test Clip".to_string()),
         kind: TimelineNodeKind::Clip(ClipNode {
             asset_id: Some("/test/clip.mp4".to_string()),
-            timeline_range: FrameRange { start: 0, duration: 100 },
-            media_range: FrameRange { start: 0, duration: 100 },
+            timeline_range: FrameRange {
+                start: 0,
+                duration: 100,
+            },
+            media_range: FrameRange {
+                start: 0,
+                duration: 100,
+            },
             playback_rate: 1.0,
             reverse: false,
             metadata: serde_json::Value::Null,
@@ -165,16 +187,16 @@ async fn test_operation_log_optimization() {
         metadata: serde_json::Value::Null,
     };
 
-    crdt.apply_local_operation(OperationKind::AddNode {
-        node: node.clone(),
-    }).unwrap();
+    crdt.apply_local_operation(OperationKind::AddNode { node: node.clone() })
+        .unwrap();
 
     // Update position multiple times
     for i in 0..10 {
         crdt.apply_local_operation(OperationKind::UpdateNodePosition {
             node_id: node.id,
             new_start: i * 10,
-        }).unwrap();
+        })
+        .unwrap();
     }
 
     assert_eq!(crdt.operation_log.operations.len(), 11); // 1 add + 10 updates
@@ -274,15 +296,19 @@ async fn test_merge_from_different_branches() {
 
     // User 1 adds a marker
     let marker1 = Marker::new(100, "User 1".to_string());
-    user1.apply_local_operation(OperationKind::AddMarker {
-        marker: marker1.clone(),
-    }).unwrap();
+    user1
+        .apply_local_operation(OperationKind::AddMarker {
+            marker: marker1.clone(),
+        })
+        .unwrap();
 
     // User 2 adds a different marker
     let marker2 = Marker::new(200, "User 2".to_string());
-    user2.apply_local_operation(OperationKind::AddMarker {
-        marker: marker2.clone(),
-    }).unwrap();
+    user2
+        .apply_local_operation(OperationKind::AddMarker {
+            marker: marker2.clone(),
+        })
+        .unwrap();
 
     // Merge user2's changes into user1
     user1.merge(&user2).unwrap();

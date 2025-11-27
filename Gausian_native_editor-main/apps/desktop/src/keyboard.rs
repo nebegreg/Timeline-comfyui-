@@ -1,6 +1,5 @@
 /// Professional keyboard shortcuts system
 /// Phase 1: Timeline Polish & UX Improvements
-
 use eframe::egui;
 
 /// Keyboard command
@@ -97,7 +96,9 @@ impl KeyCommand {
                     i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace)
                 }
                 Self::Duplicate => i.modifiers.command && i.key_pressed(egui::Key::D),
-                Self::Undo => i.modifiers.command && i.key_pressed(egui::Key::Z) && !i.modifiers.shift,
+                Self::Undo => {
+                    i.modifiers.command && i.key_pressed(egui::Key::Z) && !i.modifiers.shift
+                }
                 Self::Redo => {
                     (i.modifiers.command && i.modifiers.shift && i.key_pressed(egui::Key::Z))
                         || (i.modifiers.command && i.key_pressed(egui::Key::Y))
@@ -133,15 +134,9 @@ impl KeyCommand {
                 Self::SetSlipMode => i.key_pressed(egui::Key::Y) && !i.modifiers.command,
 
                 // Navigation
-                Self::NextEdit => {
-                    i.modifiers.shift && i.key_pressed(egui::Key::ArrowRight)
-                }
-                Self::PrevEdit => {
-                    i.modifiers.shift && i.key_pressed(egui::Key::ArrowLeft)
-                }
-                Self::GoToTimecode => {
-                    i.modifiers.command && i.key_pressed(egui::Key::G)
-                }
+                Self::NextEdit => i.modifiers.shift && i.key_pressed(egui::Key::ArrowRight),
+                Self::PrevEdit => i.modifiers.shift && i.key_pressed(egui::Key::ArrowLeft),
+                Self::GoToTimecode => i.modifiers.command && i.key_pressed(egui::Key::G),
 
                 // Timeline zoom
                 Self::ZoomIn => i.key_pressed(egui::Key::Equals) || i.key_pressed(egui::Key::Plus),
@@ -157,15 +152,11 @@ impl KeyCommand {
 
                 // Tools
                 Self::ToggleSnapping => i.key_pressed(egui::Key::Num1),
-                Self::ToggleLinking => {
-                    i.modifiers.command && i.key_pressed(egui::Key::L)
-                }
+                Self::ToggleLinking => i.modifiers.command && i.key_pressed(egui::Key::L),
 
                 // View
                 Self::ToggleFullscreen => i.key_pressed(egui::Key::F11),
-                Self::ToggleTimecode => {
-                    i.modifiers.command && i.key_pressed(egui::Key::T)
-                }
+                Self::ToggleTimecode => i.modifiers.command && i.key_pressed(egui::Key::T),
             }
         })
     }
@@ -293,10 +284,7 @@ impl KeyCommand {
                     Self::Redo,
                 ],
             ),
-            (
-                "Selection",
-                vec![Self::SelectAll, Self::DeselectAll],
-            ),
+            ("Selection", vec![Self::SelectAll, Self::DeselectAll]),
             (
                 "Markers",
                 vec![
@@ -324,11 +312,7 @@ impl KeyCommand {
             ),
             (
                 "Navigation",
-                vec![
-                    Self::NextEdit,
-                    Self::PrevEdit,
-                    Self::GoToTimecode,
-                ],
+                vec![Self::NextEdit, Self::PrevEdit, Self::GoToTimecode],
             ),
             (
                 "Timeline",

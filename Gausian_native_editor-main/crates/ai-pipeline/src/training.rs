@@ -2,7 +2,6 @@
 /// Phase 4: Automatic LORA Creator
 ///
 /// Manages training jobs, monitors progress, and coordinates with backends
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -15,8 +14,8 @@ pub struct JobId(pub String);
 impl JobId {
     /// Generate new random job ID
     pub fn new() -> Self {
-        use sha2::{Sha256, Digest};
         use hex;
+        use sha2::{Digest, Sha256};
 
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -107,10 +106,11 @@ impl TrainingProgress {
 
         // Estimate ETA
         if current_step > 0 {
-            let elapsed_secs = self.updated_at - SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64;
+            let elapsed_secs = self.updated_at
+                - SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs() as i64;
 
             if elapsed_secs > 0 {
                 let avg_step_time = elapsed_secs as f64 / current_step as f64;
@@ -249,7 +249,8 @@ impl JobStore {
         let total_steps = job.total_steps;
 
         self.jobs.insert(id.clone(), job);
-        self.progress.insert(id.clone(), TrainingProgress::new(id.clone(), total_steps));
+        self.progress
+            .insert(id.clone(), TrainingProgress::new(id.clone(), total_steps));
 
         id
     }

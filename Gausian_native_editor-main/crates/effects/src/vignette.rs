@@ -1,6 +1,5 @@
 /// Vignette effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -157,7 +156,7 @@ impl Effect for VignetteEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();
@@ -167,7 +166,7 @@ impl Effect for VignetteEffect {
         let intensity = self.get_param(params, "intensity");
         let softness = self.get_param(params, "softness");
 
-        let uniform_data = [intensity, softness, 0.0, 0.0];  // Padding for alignment
+        let uniform_data = [intensity, softness, 0.0, 0.0]; // Padding for alignment
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vignette Uniforms"),
             contents: bytemuck::cast_slice(&uniform_data),

@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use crate::timeline_crate::{
-    ClipNode, Fps, Frame, FrameRange, ItemKind, NodeId, TimelineCommand, TimelineNode, TimelineNodeKind,
-    TrackId, TrackKind, TrackPlacement,
+    ClipNode, Fps, Frame, FrameRange, ItemKind, NodeId, TimelineCommand, TimelineNode,
+    TimelineNodeKind, TrackId, TrackKind, TrackPlacement,
 };
 use eframe::egui::{self, Color32, Rect, Shape, Stroke};
 use serde_json::Value;
@@ -91,7 +91,6 @@ impl App {
 
         linked
     }
-
 
     fn clip_media_fps(&self, clip: &ClipNode) -> Fps {
         if let Value::Object(map) = &clip.metadata {
@@ -398,7 +397,8 @@ impl App {
             return None;
         }
 
-        let tolerance_frames = (self.snap_settings.snap_tolerance / self.zoom_px_per_frame).ceil() as i64;
+        let tolerance_frames =
+            (self.snap_settings.snap_tolerance / self.zoom_px_per_frame).ceil() as i64;
         let mut best_snap: Option<(i64, i64)> = None; // (frame, distance)
 
         // Snap to playhead
@@ -584,10 +584,15 @@ impl App {
                                     drag.orig_from
                                 };
 
-                                if let Err(err) = ripple_move_clip(&mut self.seq.graph, &drag.node_id, new_start) {
+                                if let Err(err) =
+                                    ripple_move_clip(&mut self.seq.graph, &drag.node_id, new_start)
+                                {
                                     eprintln!("Ripple move failed: {}", err);
                                     // Fall back to normal update
-                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                    let _ =
+                                        self.apply_timeline_command(TimelineCommand::UpdateNode {
+                                            node,
+                                        });
                                 }
                             }
                             DragMode::TrimStart | DragMode::TrimEnd => {
@@ -599,20 +604,30 @@ impl App {
                                     return;
                                 };
 
-                                if let Err(err) = ripple_trim_clip(&mut self.seq.graph, &drag.node_id, new_range) {
+                                if let Err(err) =
+                                    ripple_trim_clip(&mut self.seq.graph, &drag.node_id, new_range)
+                                {
                                     eprintln!("Ripple trim failed: {}", err);
                                     // Fall back to normal update
-                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                    let _ =
+                                        self.apply_timeline_command(TimelineCommand::UpdateNode {
+                                            node,
+                                        });
                                 }
                             }
                         }
                     } else {
                         // Track changed - use normal behavior
                         let target_id = target_track_id.unwrap_or(drag.original_track_id);
-                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode {
+                            node_id: drag.node_id,
+                        });
                         let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
                             node,
-                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            placements: vec![TrackPlacement {
+                                track_id: target_id,
+                                position: None,
+                            }],
                             edges: Vec::new(),
                         });
                     }
@@ -620,16 +635,24 @@ impl App {
 
                 EditMode::Roll => {
                     // Roll mode: adjust edit point between adjacent clips
-                    if !track_changed && matches!(drag.mode, DragMode::TrimStart | DragMode::TrimEnd) {
-                        use crate::timeline_crate::edit_operations::{find_adjacent_clips, roll_edit};
+                    if !track_changed
+                        && matches!(drag.mode, DragMode::TrimStart | DragMode::TrimEnd)
+                    {
+                        use crate::timeline_crate::edit_operations::{
+                            find_adjacent_clips, roll_edit,
+                        };
 
                         // Find adjacent clips for roll edit
                         match find_adjacent_clips(&self.seq.graph, &drag.node_id) {
                             Ok(Some((left_id, right_id))) => {
                                 // Determine the new edit point based on which edge was dragged
-                                let new_edit_point = if let TimelineNodeKind::Clip(clip) = &node.kind {
+                                let new_edit_point = if let TimelineNodeKind::Clip(clip) =
+                                    &node.kind
+                                {
                                     match drag.mode {
-                                        DragMode::TrimEnd => clip.timeline_range.start + clip.timeline_range.duration,
+                                        DragMode::TrimEnd => {
+                                            clip.timeline_range.start + clip.timeline_range.duration
+                                        }
                                         DragMode::TrimStart => clip.timeline_range.start,
                                         _ => clip.timeline_range.start,
                                     }
@@ -637,33 +660,49 @@ impl App {
                                     return;
                                 };
 
-                                if let Err(err) = roll_edit(&mut self.seq.graph, &left_id, &right_id, new_edit_point) {
+                                if let Err(err) = roll_edit(
+                                    &mut self.seq.graph,
+                                    &left_id,
+                                    &right_id,
+                                    new_edit_point,
+                                ) {
                                     eprintln!("Roll edit failed: {}", err);
                                     // Fall back to normal update
-                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                    let _ =
+                                        self.apply_timeline_command(TimelineCommand::UpdateNode {
+                                            node,
+                                        });
                                 }
                             }
                             Ok(None) => {
                                 // No adjacent clips, use normal trim
-                                let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                let _ = self
+                                    .apply_timeline_command(TimelineCommand::UpdateNode { node });
                             }
                             Err(err) => {
                                 eprintln!("Find adjacent clips failed: {}", err);
-                                let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                let _ = self
+                                    .apply_timeline_command(TimelineCommand::UpdateNode { node });
                             }
                         }
                     } else {
                         // Normal behavior for non-trim or track change
                         if track_changed {
                             let target_id = target_track_id.unwrap_or(drag.original_track_id);
-                            let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                            let _ = self.apply_timeline_command(TimelineCommand::RemoveNode {
+                                node_id: drag.node_id,
+                            });
                             let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
                                 node,
-                                placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                                placements: vec![TrackPlacement {
+                                    track_id: target_id,
+                                    position: None,
+                                }],
                                 edges: Vec::new(),
                             });
                         } else {
-                            let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                            let _ =
+                                self.apply_timeline_command(TimelineCommand::UpdateNode { node });
                         }
                     }
                 }
@@ -673,10 +712,15 @@ impl App {
                     // For now, fall back to normal behavior (requires more complex media offset calculation)
                     if track_changed {
                         let target_id = target_track_id.unwrap_or(drag.original_track_id);
-                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode {
+                            node_id: drag.node_id,
+                        });
                         let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
                             node,
-                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            placements: vec![TrackPlacement {
+                                track_id: target_id,
+                                position: None,
+                            }],
                             edges: Vec::new(),
                         });
                     } else {
@@ -689,10 +733,15 @@ impl App {
                     // For now, fall back to normal behavior
                     if track_changed {
                         let target_id = target_track_id.unwrap_or(drag.original_track_id);
-                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode {
+                            node_id: drag.node_id,
+                        });
                         let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
                             node,
-                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            placements: vec![TrackPlacement {
+                                track_id: target_id,
+                                position: None,
+                            }],
                             edges: Vec::new(),
                         });
                     } else {
@@ -722,7 +771,8 @@ impl App {
                             return;
                         }
                     } else {
-                        if let Err(err) = self.apply_timeline_command(TimelineCommand::UpdateNode { node })
+                        if let Err(err) =
+                            self.apply_timeline_command(TimelineCommand::UpdateNode { node })
                         {
                             eprintln!("timeline update failed: {err}");
                             return;
@@ -1108,7 +1158,11 @@ impl App {
                             timeline_ui_helpers::draw_selection_outline(&painter, r, is_primary);
                         } else {
                             // Default border for non-selected clips
-                            painter.rect_stroke(r, 4.0, egui::Stroke::new(1.0, egui::Color32::BLACK));
+                            painter.rect_stroke(
+                                r,
+                                4.0,
+                                egui::Stroke::new(1.0, egui::Color32::BLACK),
+                            );
                         }
                         painter.text(
                             r.center_top() + egui::vec2(0.0, 12.0),
@@ -1233,14 +1287,28 @@ impl App {
                 // Phase 1: Draw markers
                 for marker in self.markers.all_markers() {
                     let marker_x = rect.left() + marker.frame as f32 * self.zoom_px_per_frame;
-                    timeline_ui_helpers::draw_marker(&painter, marker, marker_x, rect.top(), rect.bottom(), true);
+                    timeline_ui_helpers::draw_marker(
+                        &painter,
+                        marker,
+                        marker_x,
+                        rect.top(),
+                        rect.bottom(),
+                        true,
+                    );
                 }
 
                 // Phase 1: Draw regions (in/out ranges)
                 for region in self.markers.all_regions() {
                     let start_x = rect.left() + region.start_frame as f32 * self.zoom_px_per_frame;
                     let end_x = rect.left() + region.end_frame as f32 * self.zoom_px_per_frame;
-                    timeline_ui_helpers::draw_region(&painter, start_x, end_x, rect.top(), rect.bottom(), &region.color);
+                    timeline_ui_helpers::draw_region(
+                        &painter,
+                        start_x,
+                        end_x,
+                        rect.top(),
+                        rect.bottom(),
+                        &region.color,
+                    );
                 }
 
                 // Click/drag background to scrub (when not dragging a clip)
@@ -1285,9 +1353,13 @@ impl App {
                                 let y = rect.top() + ti as f32 * track_h;
                                 for node_id in &binding.node_ids {
                                     if let Some(node) = self.seq.graph.nodes.get(node_id) {
-                                        if let Some(display) = Self::display_info_for_node(node, &binding.kind) {
-                                            let x0 = rect.left() + display.start as f32 * self.zoom_px_per_frame;
-                                            let x1 = x0 + display.duration as f32 * self.zoom_px_per_frame;
+                                        if let Some(display) =
+                                            Self::display_info_for_node(node, &binding.kind)
+                                        {
+                                            let x0 = rect.left()
+                                                + display.start as f32 * self.zoom_px_per_frame;
+                                            let x1 = x0
+                                                + display.duration as f32 * self.zoom_px_per_frame;
                                             let clip_rect = egui::Rect::from_min_max(
                                                 egui::pos2(x0, y + 4.0),
                                                 egui::pos2(x1, y + track_h - 4.0),
@@ -1303,7 +1375,10 @@ impl App {
                     }
                 }
 
-                if self.drag.is_none() && self.dragging_asset.is_none() && self.rect_selection.is_none() {
+                if self.drag.is_none()
+                    && self.dragging_asset.is_none()
+                    && self.rect_selection.is_none()
+                {
                     let was_playing = self.playback_clock.playing;
                     // Single click: move playhead on mouse up as well
                     if response.clicked() {
@@ -1405,8 +1480,13 @@ impl App {
                                     // Check if the clip start is snapped
                                     if let Some(snap_frame) = self.find_snap_point(range.start) {
                                         if snap_frame == range.start {
-                                            let snap_x = rect.left() + snap_frame as f32 * self.zoom_px_per_frame;
-                                            timeline_ui_helpers::draw_snap_indicator(&painter, snap_x, rect.top()..=rect.bottom());
+                                            let snap_x = rect.left()
+                                                + snap_frame as f32 * self.zoom_px_per_frame;
+                                            timeline_ui_helpers::draw_snap_indicator(
+                                                &painter,
+                                                snap_x,
+                                                rect.top()..=rect.bottom(),
+                                            );
                                         }
                                     }
                                 }

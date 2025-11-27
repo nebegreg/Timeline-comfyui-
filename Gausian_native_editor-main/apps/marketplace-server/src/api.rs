@@ -1,6 +1,5 @@
 /// REST API endpoints for plugin marketplace
 /// Handles plugin CRUD, search, ratings, and downloads
-
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -25,9 +24,10 @@ pub enum ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            ApiError::StorageError(e) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Storage error: {}", e))
-            }
+            ApiError::StorageError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Storage error: {}", e),
+            ),
             ApiError::NotFound => (StatusCode::NOT_FOUND, "Not found".to_string()),
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
         };
@@ -49,10 +49,7 @@ pub async fn get_plugin(
     State(storage): State<Arc<MarketplaceStorage>>,
     Path(id): Path<String>,
 ) -> Result<Json<Plugin>, ApiError> {
-    storage
-        .get_plugin(&id)
-        .map(Json)
-        .ok_or(ApiError::NotFound)
+    storage.get_plugin(&id).map(Json).ok_or(ApiError::NotFound)
 }
 
 /// POST /api/plugins - Create a new plugin
@@ -172,8 +169,6 @@ pub async fn record_download(
 }
 
 /// GET /api/stats - Get marketplace statistics
-pub async fn get_stats(
-    State(storage): State<Arc<MarketplaceStorage>>,
-) -> Json<serde_json::Value> {
+pub async fn get_stats(State(storage): State<Arc<MarketplaceStorage>>) -> Json<serde_json::Value> {
     Json(storage.get_stats())
 }

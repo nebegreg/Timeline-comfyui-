@@ -1,10 +1,9 @@
-/// Timeline toolbar UI - Edit modes, snap settings, playback controls
-/// Phase 1: Timeline Polish & UX
-
-use eframe::egui;
 use crate::edit_modes::{EditMode, SnapSettings};
 use crate::keyboard::PlaybackSpeed;
 use crate::timeline_ui_helpers::edit_mode_button;
+/// Timeline toolbar UI - Edit modes, snap settings, playback controls
+/// Phase 1: Timeline Polish & UX
+use eframe::egui;
 
 /// Timeline toolbar state
 pub struct TimelineToolbar {
@@ -41,7 +40,11 @@ impl TimelineToolbar {
             ui.separator();
 
             // Snap toggle
-            let snap_text = if snap_settings.enabled { "🧲 Snap: ON" } else { "Snap: OFF" };
+            let snap_text = if snap_settings.enabled {
+                "🧲 Snap: ON"
+            } else {
+                "Snap: OFF"
+            };
             if ui.button(snap_text).clicked() {
                 snap_settings.toggle();
             }
@@ -62,7 +65,7 @@ impl TimelineToolbar {
                 ui.label(
                     egui::RichText::new(speed_text)
                         .color(egui::Color32::from_rgb(100, 255, 100))
-                        .strong()
+                        .strong(),
                 );
             }
 
@@ -93,13 +96,17 @@ impl TimelineToolbar {
                 ui.checkbox(&mut snap_settings.snap_to_playhead, "Snap to Playhead");
                 ui.checkbox(&mut snap_settings.snap_to_clips, "Snap to Clip Edges");
                 ui.checkbox(&mut snap_settings.snap_to_markers, "Snap to Markers");
-                ui.checkbox(&mut snap_settings.snap_to_seconds, "Snap to Second Boundaries");
+                ui.checkbox(
+                    &mut snap_settings.snap_to_seconds,
+                    "Snap to Second Boundaries",
+                );
 
                 ui.separator();
 
                 ui.label("Snap Tolerance:");
-                ui.add(egui::Slider::new(&mut snap_settings.snap_tolerance, 1.0..=20.0)
-                    .suffix(" px"));
+                ui.add(
+                    egui::Slider::new(&mut snap_settings.snap_tolerance, 1.0..=20.0).suffix(" px"),
+                );
             });
     }
 }
@@ -108,16 +115,14 @@ impl TimelineToolbar {
 pub struct PlaybackToolbar;
 
 impl PlaybackToolbar {
-    pub fn ui(
-        ui: &mut egui::Ui,
-        playing: &mut bool,
-        playhead: i64,
-        fps: timeline::Fps,
-    ) {
+    pub fn ui(ui: &mut egui::Ui, playing: &mut bool, playhead: i64, fps: timeline::Fps) {
         ui.horizontal(|ui| {
             // Play/Pause button
             let play_text = if *playing { "⏸" } else { "▶" };
-            if ui.button(egui::RichText::new(play_text).size(20.0)).clicked() {
+            if ui
+                .button(egui::RichText::new(play_text).size(20.0))
+                .clicked()
+            {
                 *playing = !*playing;
             }
 
@@ -138,7 +143,7 @@ impl PlaybackToolbar {
                 ui.label(
                     egui::RichText::new(if is_drop_frame { "DF" } else { "NDF" })
                         .small()
-                        .weak()
+                        .weak(),
                 );
             });
 
@@ -171,12 +176,7 @@ fn frame_to_timecode(frame: i64, fps: timeline::Fps) -> String {
 pub struct StatusBar;
 
 impl StatusBar {
-    pub fn ui(
-        ui: &mut egui::Ui,
-        selection_count: usize,
-        edit_mode: EditMode,
-        snap_enabled: bool,
-    ) {
+    pub fn ui(ui: &mut egui::Ui, selection_count: usize, edit_mode: EditMode, snap_enabled: bool) {
         ui.horizontal(|ui| {
             // Selection info
             let selection_text = match selection_count {
@@ -195,13 +195,15 @@ impl StatusBar {
 
             // Snap status
             let snap_icon = if snap_enabled { "🧲" } else { "" };
-            ui.label(format!("{}Snap: {}", snap_icon, if snap_enabled { "ON" } else { "OFF" }));
+            ui.label(format!(
+                "{}Snap: {}",
+                snap_icon,
+                if snap_enabled { "ON" } else { "OFF" }
+            ));
 
             // Spacer
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(egui::RichText::new("Phase 1: Timeline UX")
-                    .weak()
-                    .italics());
+                ui.label(egui::RichText::new("Phase 1: Timeline UX").weak().italics());
             });
         });
     }

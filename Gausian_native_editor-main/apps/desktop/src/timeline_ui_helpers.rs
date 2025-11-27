@@ -1,10 +1,9 @@
+use crate::edit_modes::EditMode;
+use crate::selection::SelectionState;
 /// Timeline UI helpers for Phase 1: Selection & Markers visualization
 /// Companion to timeline/ui.rs
-
 use eframe::egui;
 use timeline::{Marker, MarkerType, NodeId};
-use crate::selection::SelectionState;
-use crate::edit_modes::EditMode;
 
 /// Visual style for selected clips
 pub struct SelectionStyle {
@@ -39,11 +38,7 @@ impl Default for PrimarySelectionStyle {
 }
 
 /// Draw selection outline around a clip rect
-pub fn draw_selection_outline(
-    painter: &egui::Painter,
-    rect: egui::Rect,
-    is_primary: bool,
-) {
+pub fn draw_selection_outline(painter: &egui::Painter, rect: egui::Rect, is_primary: bool) {
     let style = if is_primary {
         let primary = PrimarySelectionStyle::default();
         (primary.outline_color, primary.outline_width)
@@ -61,19 +56,12 @@ pub fn draw_selection_outline(
 
     // Draw subtle fill tint for non-primary
     if !is_primary {
-        painter.rect_filled(
-            rect,
-            2.0,
-            SelectionStyle::default().fill_tint,
-        );
+        painter.rect_filled(rect, 2.0, SelectionStyle::default().fill_tint);
     }
 }
 
 /// Draw rectangle selection box (drag-to-select)
-pub fn draw_rect_selection(
-    painter: &egui::Painter,
-    rect: egui::Rect,
-) {
+pub fn draw_rect_selection(painter: &egui::Painter, rect: egui::Rect) {
     // Dashed outline
     painter.rect_stroke(
         rect,
@@ -138,12 +126,7 @@ impl MarkerStyle {
         Self {
             color,
             height: 12.0,
-            label_bg: egui::Color32::from_rgba_premultiplied(
-                color.r(),
-                color.g(),
-                color.b(),
-                180,
-            ),
+            label_bg: egui::Color32::from_rgba_premultiplied(color.r(), color.g(), color.b(), 180),
         }
     }
 }
@@ -165,10 +148,7 @@ pub fn draw_marker(
 
     // Vertical line
     painter.line_segment(
-        [
-            egui::pos2(x_pos, y_top),
-            egui::pos2(x_pos, y_bottom),
-        ],
+        [egui::pos2(x_pos, y_top), egui::pos2(x_pos, y_bottom)],
         egui::Stroke::new(2.0, style.color),
     );
 
@@ -196,14 +176,15 @@ pub fn draw_marker(
         );
 
         // Background
-        let label_rect = egui::Rect::from_min_size(
-            label_pos,
-            galley.size() + egui::vec2(4.0, 2.0),
-        );
+        let label_rect = egui::Rect::from_min_size(label_pos, galley.size() + egui::vec2(4.0, 2.0));
         painter.rect_filled(label_rect, 2.0, style.label_bg);
 
         // Text
-        painter.galley(label_pos + egui::vec2(2.0, 1.0), galley, egui::Color32::WHITE);
+        painter.galley(
+            label_pos + egui::vec2(2.0, 1.0),
+            galley,
+            egui::Color32::WHITE,
+        );
     }
 }
 
@@ -228,12 +209,10 @@ pub fn draw_region(
     painter.rect_stroke(
         rect,
         0.0,
-        egui::Stroke::new(1.0, egui::Color32::from_rgba_premultiplied(
-            color.r(),
-            color.g(),
-            color.b(),
-            255,
-        )),
+        egui::Stroke::new(
+            1.0,
+            egui::Color32::from_rgba_premultiplied(color.r(), color.g(), color.b(), 255),
+        ),
     );
 }
 
@@ -258,11 +237,7 @@ fn parse_hex_color(hex: &str) -> Option<egui::Color32> {
 }
 
 /// Edit mode toolbar button
-pub fn edit_mode_button(
-    ui: &mut egui::Ui,
-    current_mode: EditMode,
-    mode: EditMode,
-) -> bool {
+pub fn edit_mode_button(ui: &mut egui::Ui, current_mode: EditMode, mode: EditMode) -> bool {
     let is_active = current_mode == mode;
 
     let button = if is_active {
@@ -327,9 +302,11 @@ pub fn keyboard_help_panel(ui: &mut egui::Ui) {
             ui.indent(category, |ui| {
                 for cmd in commands {
                     ui.horizontal(|ui| {
-                        ui.label(egui::RichText::new(cmd.shortcut_text())
-                            .monospace()
-                            .color(egui::Color32::from_rgb(100, 200, 255)));
+                        ui.label(
+                            egui::RichText::new(cmd.shortcut_text())
+                                .monospace()
+                                .color(egui::Color32::from_rgb(100, 200, 255)),
+                        );
                         ui.label("—");
                         ui.label(cmd.description());
                     });

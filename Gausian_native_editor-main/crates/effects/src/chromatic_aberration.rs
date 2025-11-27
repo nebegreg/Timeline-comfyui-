@@ -1,6 +1,5 @@
 /// Chromatic Aberration effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -29,7 +28,9 @@ impl ChromaticAberrationEffect {
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Chromatic Aberration Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/chromatic_aberration.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(
+                include_str!("shaders/chromatic_aberration.wgsl").into(),
+            ),
         });
 
         let texture_bind_group_layout =
@@ -166,7 +167,7 @@ impl Effect for ChromaticAberrationEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();

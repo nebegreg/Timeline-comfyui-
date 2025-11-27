@@ -1,6 +1,5 @@
 /// User presence tracking for collaborative editing
 /// Shows where users are working and their current selection
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use timeline::{Frame, NodeId};
@@ -241,10 +240,7 @@ pub enum PresenceUpdate {
     },
 
     #[serde(rename = "viewport_changed")]
-    ViewportChanged {
-        user_id: UserId,
-        viewport: Viewport,
-    },
+    ViewportChanged { user_id: UserId, viewport: Viewport },
 
     #[serde(rename = "user_idle")]
     UserIdle { user_id: UserId },

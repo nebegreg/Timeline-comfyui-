@@ -1,6 +1,5 @@
 /// Plugin Details Panel
 /// Shows detailed information about a selected plugin
-
 use crate::marketplace_ui::MarketplacePlugin;
 use egui::{Color32, Context, RichText, ScrollArea, Ui, Window};
 
@@ -44,7 +43,11 @@ impl PluginDetailsPanel {
         action
     }
 
-    fn render_plugin_details(&mut self, ui: &mut Ui, plugin: &MarketplacePlugin) -> Option<PluginAction> {
+    fn render_plugin_details(
+        &mut self,
+        ui: &mut Ui,
+        plugin: &MarketplacePlugin,
+    ) -> Option<PluginAction> {
         let mut action = None;
 
         // Header
@@ -134,7 +137,11 @@ impl PluginDetailsPanel {
             ui.horizontal_wrapped(|ui| {
                 ui.label("Tags:");
                 for tag in plugin.tags.split(',') {
-                    ui.label(RichText::new(format!("#{}", tag.trim())).small().color(Color32::from_rgb(100, 150, 255)));
+                    ui.label(
+                        RichText::new(format!("#{}", tag.trim()))
+                            .small()
+                            .color(Color32::from_rgb(100, 150, 255)),
+                    );
                 }
             });
         }
@@ -144,18 +151,19 @@ impl PluginDetailsPanel {
         // Long description
         if let Some(long_desc) = &plugin.long_description {
             ui.heading("Description");
-            ScrollArea::vertical()
-                .max_height(200.0)
-                .show(ui, |ui| {
-                    ui.label(long_desc);
-                });
+            ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                ui.label(long_desc);
+            });
 
             ui.separator();
         }
 
         // Action buttons
         ui.horizontal(|ui| {
-            if ui.button(RichText::new("📥 Install Plugin").size(16.0)).clicked() {
+            if ui
+                .button(RichText::new("📥 Install Plugin").size(16.0))
+                .clicked()
+            {
                 action = Some(PluginAction::Install(plugin.id.clone()));
             }
 

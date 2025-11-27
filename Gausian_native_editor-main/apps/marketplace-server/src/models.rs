@@ -1,6 +1,5 @@
 /// Plugin Marketplace Data Models
 /// Structures for plugins, ratings, and metadata
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 /// Plugin metadata
@@ -98,7 +97,7 @@ pub struct Rating {
     pub id: i64,
     pub plugin_id: String,
     pub user_id: String,
-    pub rating: i32,  // 1-5 stars
+    pub rating: i32, // 1-5 stars
     pub review: Option<String>,
     pub created_at: DateTime<Utc>,
 }

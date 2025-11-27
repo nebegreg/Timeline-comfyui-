@@ -1,5 +1,4 @@
 /// Conflict detection and resolution for collaborative editing
-
 use serde::{Deserialize, Serialize};
 use timeline::NodeId;
 
@@ -33,10 +32,7 @@ pub enum ConflictKind {
     },
 
     /// Two users edited the same node property differently
-    PropertyConflict {
-        node_id: NodeId,
-        property: String,
-    },
+    PropertyConflict { node_id: NodeId, property: String },
 
     /// Two users created nodes with the same ID (shouldn't happen with UUIDs)
     DuplicateCreate { node_id: NodeId },
@@ -366,7 +362,10 @@ mod tests {
         assert!(conflict.is_some());
 
         let conflict = conflict.unwrap();
-        assert!(matches!(conflict.kind, ConflictKind::DuplicateDelete { .. }));
+        assert!(matches!(
+            conflict.kind,
+            ConflictKind::DuplicateDelete { .. }
+        ));
     }
 
     #[test]

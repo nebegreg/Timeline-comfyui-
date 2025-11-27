@@ -1,7 +1,6 @@
 /// RGB/Luma Curves Effect
 /// Allows precise color and luminance control using Bézier curves
 /// Phase 2: Advanced Color Correction
-
 use anyhow::Result;
 use std::collections::HashMap;
 use wgpu;
@@ -24,8 +23,8 @@ pub struct CurvesEffect {
 /// Control point for Bézier curve
 #[derive(Debug, Clone, Copy)]
 pub struct CurvePoint {
-    pub x: f32,  // Input value (0-1)
-    pub y: f32,  // Output value (0-1)
+    pub x: f32, // Input value (0-1)
+    pub y: f32, // Output value (0-1)
 }
 
 impl CurvesEffect {
@@ -43,7 +42,13 @@ impl CurvesEffect {
 
     /// Set curve for a specific channel
     /// points: Control points for the curve (must include 0,0 and 1,1)
-    pub fn set_curve(&mut self, channel: CurveChannel, points: &[CurvePoint], device: &wgpu::Device, queue: &wgpu::Queue) {
+    pub fn set_curve(
+        &mut self,
+        channel: CurveChannel,
+        points: &[CurvePoint],
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) {
         let curve_data = Self::generate_curve_lut(points);
         let texture = Self::create_curve_texture(&curve_data, device, queue);
 
@@ -111,7 +116,11 @@ impl CurvesEffect {
     }
 
     /// Create 1D texture for curve LUT
-    fn create_curve_texture(data: &[f32], device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::Texture {
+    fn create_curve_texture(
+        data: &[f32],
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> wgpu::Texture {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Curve LUT Texture"),
             size: wgpu::Extent3d {
@@ -128,9 +137,7 @@ impl CurvesEffect {
         });
 
         // Convert to bytes
-        let data_bytes: Vec<u8> = data.iter()
-            .flat_map(|&v| v.to_le_bytes())
-            .collect();
+        let data_bytes: Vec<u8> = data.iter().flat_map(|&v| v.to_le_bytes()).collect();
 
         queue.write_texture(
             wgpu::ImageCopyTexture {
@@ -189,73 +196,75 @@ impl CurvesEffect {
         }
 
         // Bind group layout
-        self.bind_group_layout = Some(device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Curves Bind Group Layout"),
-            entries: &[
-                // Input texture
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+        self.bind_group_layout = Some(device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("Curves Bind Group Layout"),
+                entries: &[
+                    // Input texture
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // Sampler
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                // Master curve
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D1,
-                        multisampled: false,
+                    // Sampler
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-                // Red curve
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D1,
-                        multisampled: false,
+                    // Master curve
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D1,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // Green curve
-                wgpu::BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D1,
-                        multisampled: false,
+                    // Red curve
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D1,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // Blue curve
-                wgpu::BindGroupLayoutEntry {
-                    binding: 5,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D1,
-                        multisampled: false,
+                    // Green curve
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D1,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        }));
+                    // Blue curve
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D1,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                ],
+            },
+        ));
 
         // Shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -270,38 +279,40 @@ impl CurvesEffect {
             push_constant_ranges: &[],
         });
 
-        self.pipeline = Some(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Curves Pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[],
-                compilation_options: Default::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: Default::default(),
+        self.pipeline = Some(
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Curves Pipeline"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                    compilation_options: Default::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: Default::default(),
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+                cache: None,
             }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-            cache: None,
-        }));
+        );
     }
 }
 
 /// Curve channel selection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CurveChannel {
-    Master,  // Applied to all channels
+    Master, // Applied to all channels
     Red,
     Green,
     Blue,
@@ -317,17 +328,15 @@ impl Effect for CurvesEffect {
     }
 
     fn parameters(&self) -> Vec<EffectParameter> {
-        vec![
-            EffectParameter {
-                name: "intensity".to_string(),
-                display_name: "Intensity".to_string(),
-                param_type: ParameterType::Percentage,
-                default: 100.0,
-                min: 0.0,
-                max: 100.0,
-                description: "Blend intensity of curve effect".to_string(),
-            },
-        ]
+        vec![EffectParameter {
+            name: "intensity".to_string(),
+            display_name: "Intensity".to_string(),
+            param_type: ParameterType::Percentage,
+            default: 100.0,
+            min: 0.0,
+            max: 100.0,
+            description: "Blend intensity of curve effect".to_string(),
+        }]
     }
 
     fn apply(
@@ -361,7 +370,7 @@ impl Effect for CurvesEffect {
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(
-                        &input.create_view(&Default::default())
+                        &input.create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
@@ -371,25 +380,41 @@ impl Effect for CurvesEffect {
                 wgpu::BindGroupEntry {
                     binding: 2,
                     resource: wgpu::BindingResource::TextureView(
-                        &self.master_curve_texture.as_ref().unwrap().create_view(&Default::default())
+                        &self
+                            .master_curve_texture
+                            .as_ref()
+                            .unwrap()
+                            .create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
                     resource: wgpu::BindingResource::TextureView(
-                        &self.red_curve_texture.as_ref().unwrap().create_view(&Default::default())
+                        &self
+                            .red_curve_texture
+                            .as_ref()
+                            .unwrap()
+                            .create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
                     binding: 4,
                     resource: wgpu::BindingResource::TextureView(
-                        &self.green_curve_texture.as_ref().unwrap().create_view(&Default::default())
+                        &self
+                            .green_curve_texture
+                            .as_ref()
+                            .unwrap()
+                            .create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
                     binding: 5,
                     resource: wgpu::BindingResource::TextureView(
-                        &self.blue_curve_texture.as_ref().unwrap().create_view(&Default::default())
+                        &self
+                            .blue_curve_texture
+                            .as_ref()
+                            .unwrap()
+                            .create_view(&Default::default()),
                     ),
                 },
             ],

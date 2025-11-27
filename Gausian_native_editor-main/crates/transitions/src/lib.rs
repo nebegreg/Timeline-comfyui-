@@ -1,6 +1,5 @@
 /// GPU-accelerated transitions for video editing
 /// Phase 2: Rich Effects & Transitions
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use wgpu;
@@ -15,7 +14,7 @@ pub trait Transition: Send + Sync {
 
     /// Default duration in frames
     fn default_duration(&self) -> i64 {
-        30  // 30 frames at 30fps = 1 second
+        30 // 30 frames at 30fps = 1 second
     }
 
     /// Render transition between two frames
@@ -136,14 +135,14 @@ pub mod easing {
 
 // Modules for specific transitions
 pub mod dissolve;
-pub mod wipe;
 pub mod slide;
-pub mod zoom;
 pub mod spin;
+pub mod wipe;
+pub mod zoom;
 
 // Re-exports
 pub use dissolve::DissolveTransition;
-pub use wipe::WipeTransition;
 pub use slide::SlideTransition;
-pub use zoom::ZoomTransition;
 pub use spin::SpinTransition;
+pub use wipe::WipeTransition;
+pub use zoom::ZoomTransition;

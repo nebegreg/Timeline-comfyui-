@@ -2,12 +2,11 @@
 ///
 /// Advanced curve editor with interactive Bézier handles for precise
 /// keyframe control. Uses egui_plot for professional graph visualization.
-
 use eframe::egui::{self, Color32, Ui};
-use egui_plot::{Line, PlotPoints, Plot, Points, PlotBounds};
+use egui_plot::{Line, Plot, PlotBounds, PlotPoints, Points};
 use timeline::{
-    AutomationEngine, AutomationInterpolation, AutomationKeyframe, AutomationLane,
-    KeyframeEasing, Frame,
+    AutomationEngine, AutomationInterpolation, AutomationKeyframe, AutomationLane, Frame,
+    KeyframeEasing,
 };
 
 /// Graph editor state
@@ -67,13 +66,34 @@ pub fn render_graph_editor(
         egui::ComboBox::from_id_salt("graph_interpolation")
             .selected_text(interpolation_name(&lane.interpolation))
             .show_ui(ui, |ui| {
-                if ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Linear, "Linear").clicked() {
+                if ui
+                    .selectable_value(
+                        &mut lane.interpolation,
+                        AutomationInterpolation::Linear,
+                        "Linear",
+                    )
+                    .clicked()
+                {
                     modified = true;
                 }
-                if ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Step, "Step").clicked() {
+                if ui
+                    .selectable_value(
+                        &mut lane.interpolation,
+                        AutomationInterpolation::Step,
+                        "Step",
+                    )
+                    .clicked()
+                {
                     modified = true;
                 }
-                if ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Bezier, "Bézier").clicked() {
+                if ui
+                    .selectable_value(
+                        &mut lane.interpolation,
+                        AutomationInterpolation::Bezier,
+                        "Bézier",
+                    )
+                    .clicked()
+                {
                     modified = true;
                 }
             });
@@ -167,10 +187,11 @@ fn render_plot(
         // Highlight selected keyframe
         if let Some(selected_frame) = state.selected_keyframe {
             if let Some(kf) = lane.get_keyframe(selected_frame) {
-                let selected_point = Points::new(PlotPoints::from(vec![[kf.frame as f64, kf.value]]))
-                    .color(Color32::from_rgb(255, 100, 50))
-                    .radius(8.0)
-                    .name("Selected");
+                let selected_point =
+                    Points::new(PlotPoints::from(vec![[kf.frame as f64, kf.value]]))
+                        .color(Color32::from_rgb(255, 100, 50))
+                        .radius(8.0)
+                        .name("Selected");
 
                 plot_ui.points(selected_point);
             }
@@ -202,7 +223,11 @@ fn render_plot(
     if let Some(hover_pos) = plot_response.response.hover_pos() {
         if plot_response.response.clicked() {
             // Find clicked keyframe
-            if let Some(pointer_pos) = plot_response.transform.as_ref().and_then(|t| t.value_from_position(hover_pos)) {
+            if let Some(pointer_pos) = plot_response
+                .transform
+                .as_ref()
+                .and_then(|t| t.value_from_position(hover_pos))
+            {
                 let clicked_frame = pointer_pos.x.round() as i64;
                 let clicked_value = pointer_pos.y;
 
@@ -234,7 +259,11 @@ fn render_plot(
 }
 
 /// Generate curve points for visualization
-fn generate_curve_points(lane: &AutomationLane, frame_min: Frame, frame_max: Frame) -> Vec<[f64; 2]> {
+fn generate_curve_points(
+    lane: &AutomationLane,
+    frame_min: Frame,
+    frame_max: Frame,
+) -> Vec<[f64; 2]> {
     let mut points = Vec::new();
 
     // Sample every frame for smooth curve
@@ -263,12 +292,15 @@ fn render_keyframe_properties(
 
             ui.horizontal(|ui| {
                 ui.label("Value:");
-                if ui.add(
-                    egui::DragValue::new(&mut keyframe.value)
-                        .speed(0.01)
-                        .clamp_range(0.0..=1.0)
-                        .fixed_decimals(3),
-                ).changed() {
+                if ui
+                    .add(
+                        egui::DragValue::new(&mut keyframe.value)
+                            .speed(0.01)
+                            .clamp_range(0.0..=1.0)
+                            .fixed_decimals(3),
+                    )
+                    .changed()
+                {
                     *modified = true;
                 }
             });
@@ -278,23 +310,55 @@ fn render_keyframe_properties(
                 egui::ComboBox::from_id_salt("keyframe_easing")
                     .selected_text(easing_name(&keyframe.easing))
                     .show_ui(ui, |ui| {
-                        if ui.selectable_value(&mut keyframe.easing, KeyframeEasing::Linear, "Linear").clicked() {
+                        if ui
+                            .selectable_value(
+                                &mut keyframe.easing,
+                                KeyframeEasing::Linear,
+                                "Linear",
+                            )
+                            .clicked()
+                        {
                             *modified = true;
                         }
-                        if ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseIn, "Ease In").clicked() {
+                        if ui
+                            .selectable_value(
+                                &mut keyframe.easing,
+                                KeyframeEasing::EaseIn,
+                                "Ease In",
+                            )
+                            .clicked()
+                        {
                             *modified = true;
                         }
-                        if ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseOut, "Ease Out").clicked() {
+                        if ui
+                            .selectable_value(
+                                &mut keyframe.easing,
+                                KeyframeEasing::EaseOut,
+                                "Ease Out",
+                            )
+                            .clicked()
+                        {
                             *modified = true;
                         }
-                        if ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseInOut, "Ease In-Out").clicked() {
+                        if ui
+                            .selectable_value(
+                                &mut keyframe.easing,
+                                KeyframeEasing::EaseInOut,
+                                "Ease In-Out",
+                            )
+                            .clicked()
+                        {
                             *modified = true;
                         }
                     });
             });
 
             // Custom tangent controls
-            if let KeyframeEasing::Custom { in_tangent, out_tangent } = &mut keyframe.easing {
+            if let KeyframeEasing::Custom {
+                in_tangent,
+                out_tangent,
+            } = &mut keyframe.easing
+            {
                 ui.horizontal(|ui| {
                     ui.label("In Tangent:");
                     if ui.add(egui::Slider::new(in_tangent, 0.0..=1.0)).changed() {
@@ -330,7 +394,11 @@ fn render_keyframe_properties(
 }
 
 /// Easing preset buttons
-pub fn easing_presets_panel(ui: &mut Ui, lane: &mut AutomationLane, state: &GraphEditorState) -> bool {
+pub fn easing_presets_panel(
+    ui: &mut Ui,
+    lane: &mut AutomationLane,
+    state: &GraphEditorState,
+) -> bool {
     let mut modified = false;
 
     ui.heading("Easing Presets");
