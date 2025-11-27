@@ -123,9 +123,24 @@ impl PlaybackToolbar {
 
             ui.separator();
 
-            // Timecode display
+            // Timecode display with DF/NDF indicator (Phase 1)
             let timecode = frame_to_timecode(playhead, fps);
-            ui.label(egui::RichText::new(timecode).monospace().size(14.0));
+
+            // Determine if drop-frame based on frame rate
+            // Drop-frame is used for 29.97 fps and 59.94 fps
+            let is_drop_frame = {
+                let fps_value = fps.num as f64 / fps.den.max(1) as f64;
+                (fps_value - 29.97).abs() < 0.01 || (fps_value - 59.94).abs() < 0.01
+            };
+
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(timecode).monospace().size(14.0));
+                ui.label(
+                    egui::RichText::new(if is_drop_frame { "DF" } else { "NDF" })
+                        .small()
+                        .weak()
+                );
+            });
 
             ui.separator();
 

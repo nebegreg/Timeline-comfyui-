@@ -6858,7 +6858,28 @@ impl eframe::App for App {
                 };
             }
 
-            // S - Toggle snap
+            // Phase 1: Individual edit mode shortcuts
+            // N - Normal mode
+            if ctx.input(|i| i.key_pressed(egui::Key::N)) {
+                self.edit_mode = EditMode::Normal;
+            }
+
+            // R - Ripple mode
+            if ctx.input(|i| i.key_pressed(egui::Key::R)) {
+                self.edit_mode = EditMode::Ripple;
+            }
+
+            // T - Roll mode
+            if ctx.input(|i| i.key_pressed(egui::Key::T)) {
+                self.edit_mode = EditMode::Roll;
+            }
+
+            // Y - Slip mode (S is used for snap toggle)
+            if ctx.input(|i| i.key_pressed(egui::Key::Y)) {
+                self.edit_mode = EditMode::Slip;
+            }
+
+            // S - Toggle snap (keeps existing functionality)
             if ctx.input(|i| i.key_pressed(egui::Key::S) && !i.modifiers.command) {
                 self.snap_settings.enabled = !self.snap_settings.enabled;
             }

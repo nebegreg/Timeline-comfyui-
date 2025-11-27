@@ -1,13 +1,14 @@
 use std::path::Path;
 
 use crate::timeline_crate::{
-    ClipNode, Fps, FrameRange, ItemKind, NodeId, TimelineCommand, TimelineNode, TimelineNodeKind,
+    ClipNode, Fps, Frame, FrameRange, ItemKind, NodeId, TimelineCommand, TimelineNode, TimelineNodeKind,
     TrackId, TrackKind, TrackPlacement,
 };
 use eframe::egui::{self, Color32, Rect, Shape, Stroke};
 use serde_json::Value;
 
 use crate::decode::PlayState;
+use crate::edit_modes::EditMode;
 use crate::interaction::{DragMode, DragState, LinkedDragNode};
 use crate::timeline_ui_helpers;
 use crate::App;
@@ -559,43 +560,183 @@ impl App {
 
         if let Some(node) = final_node {
             let track_changed = drag.current_track_index != drag.original_track_index;
+
+            // No change, early return
             if !track_changed && node == drag.original_node {
                 self.sync_tracks_from_graph();
                 self.update_selection_for_node(drag.node_id);
                 return;
             }
 
-            if track_changed {
-                let target_id = target_track_id.unwrap_or(drag.original_track_id);
-                if let Err(err) = self.apply_timeline_command(TimelineCommand::RemoveNode {
-                    node_id: drag.node_id,
-                }) {
-                    eprintln!("timeline remove failed: {err}");
-                    return;
+            // Phase 1: Edit mode integration
+            // Apply edit operations based on current edit mode
+            match self.edit_mode {
+                EditMode::Ripple => {
+                    // Ripple mode: shift all following clips
+                    if !track_changed {
+                        match drag.mode {
+                            DragMode::Move => {
+                                // Ripple move: move clip and shift following clips
+                                use crate::timeline_crate::edit_operations::ripple_move_clip;
+                                let new_start = if let TimelineNodeKind::Clip(clip) = &node.kind {
+                                    clip.timeline_range.start
+                                } else {
+                                    drag.orig_from
+                                };
+
+                                if let Err(err) = ripple_move_clip(&mut self.seq.graph, &drag.node_id, new_start) {
+                                    eprintln!("Ripple move failed: {}", err);
+                                    // Fall back to normal update
+                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                }
+                            }
+                            DragMode::TrimStart | DragMode::TrimEnd => {
+                                // Ripple trim: trim clip and shift following clips
+                                use crate::timeline_crate::edit_operations::ripple_trim_clip;
+                                let new_range = if let TimelineNodeKind::Clip(clip) = &node.kind {
+                                    clip.timeline_range
+                                } else {
+                                    return;
+                                };
+
+                                if let Err(err) = ripple_trim_clip(&mut self.seq.graph, &drag.node_id, new_range) {
+                                    eprintln!("Ripple trim failed: {}", err);
+                                    // Fall back to normal update
+                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                }
+                            }
+                        }
+                    } else {
+                        // Track changed - use normal behavior
+                        let target_id = target_track_id.unwrap_or(drag.original_track_id);
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
+                            node,
+                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            edges: Vec::new(),
+                        });
+                    }
                 }
-                if let Err(err) = self.apply_timeline_command(TimelineCommand::InsertNode {
-                    node,
-                    placements: vec![TrackPlacement {
-                        track_id: target_id,
-                        position: None,
-                    }],
-                    edges: Vec::new(),
-                }) {
-                    eprintln!("timeline insert failed: {err}");
-                    return;
+
+                EditMode::Roll => {
+                    // Roll mode: adjust edit point between adjacent clips
+                    if !track_changed && matches!(drag.mode, DragMode::TrimStart | DragMode::TrimEnd) {
+                        use crate::timeline_crate::edit_operations::{find_adjacent_clips, roll_edit};
+
+                        // Find adjacent clips for roll edit
+                        match find_adjacent_clips(&self.seq.graph, &drag.node_id) {
+                            Ok(Some((left_id, right_id))) => {
+                                // Determine the new edit point based on which edge was dragged
+                                let new_edit_point = if let TimelineNodeKind::Clip(clip) = &node.kind {
+                                    match drag.mode {
+                                        DragMode::TrimEnd => clip.timeline_range.start + clip.timeline_range.duration,
+                                        DragMode::TrimStart => clip.timeline_range.start,
+                                        _ => clip.timeline_range.start,
+                                    }
+                                } else {
+                                    return;
+                                };
+
+                                if let Err(err) = roll_edit(&mut self.seq.graph, &left_id, &right_id, new_edit_point) {
+                                    eprintln!("Roll edit failed: {}", err);
+                                    // Fall back to normal update
+                                    let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                                }
+                            }
+                            Ok(None) => {
+                                // No adjacent clips, use normal trim
+                                let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                            }
+                            Err(err) => {
+                                eprintln!("Find adjacent clips failed: {}", err);
+                                let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                            }
+                        }
+                    } else {
+                        // Normal behavior for non-trim or track change
+                        if track_changed {
+                            let target_id = target_track_id.unwrap_or(drag.original_track_id);
+                            let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                            let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
+                                node,
+                                placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                                edges: Vec::new(),
+                            });
+                        } else {
+                            let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                        }
+                    }
                 }
-            } else {
-                if let Err(err) = self.apply_timeline_command(TimelineCommand::UpdateNode { node })
-                {
-                    eprintln!("timeline update failed: {err}");
-                    return;
+
+                EditMode::Slide => {
+                    // Slide mode: change media offset without changing timeline position
+                    // For now, fall back to normal behavior (requires more complex media offset calculation)
+                    if track_changed {
+                        let target_id = target_track_id.unwrap_or(drag.original_track_id);
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
+                            node,
+                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            edges: Vec::new(),
+                        });
+                    } else {
+                        let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                    }
+                }
+
+                EditMode::Slip => {
+                    // Slip mode: change visible media portion
+                    // For now, fall back to normal behavior
+                    if track_changed {
+                        let target_id = target_track_id.unwrap_or(drag.original_track_id);
+                        let _ = self.apply_timeline_command(TimelineCommand::RemoveNode { node_id: drag.node_id });
+                        let _ = self.apply_timeline_command(TimelineCommand::InsertNode {
+                            node,
+                            placements: vec![TrackPlacement { track_id: target_id, position: None }],
+                            edges: Vec::new(),
+                        });
+                    } else {
+                        let _ = self.apply_timeline_command(TimelineCommand::UpdateNode { node });
+                    }
+                }
+
+                EditMode::Normal => {
+                    // Normal mode: original behavior
+                    if track_changed {
+                        let target_id = target_track_id.unwrap_or(drag.original_track_id);
+                        if let Err(err) = self.apply_timeline_command(TimelineCommand::RemoveNode {
+                            node_id: drag.node_id,
+                        }) {
+                            eprintln!("timeline remove failed: {err}");
+                            return;
+                        }
+                        if let Err(err) = self.apply_timeline_command(TimelineCommand::InsertNode {
+                            node,
+                            placements: vec![TrackPlacement {
+                                track_id: target_id,
+                                position: None,
+                            }],
+                            edges: Vec::new(),
+                        }) {
+                            eprintln!("timeline insert failed: {err}");
+                            return;
+                        }
+                    } else {
+                        if let Err(err) = self.apply_timeline_command(TimelineCommand::UpdateNode { node })
+                        {
+                            eprintln!("timeline update failed: {err}");
+                            return;
+                        }
+                    }
                 }
             }
+
             self.update_selection_for_node(drag.node_id);
         } else {
             self.sync_tracks_from_graph();
         }
 
+        // Update linked clips (always use normal behavior for linked clips)
         for (linked, final_node) in linked_finals {
             if let Some(node) = final_node {
                 if node == linked.original_node {

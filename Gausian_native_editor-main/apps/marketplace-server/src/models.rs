@@ -134,6 +134,7 @@ pub struct SearchResults {
 
 /// Plugin statistics
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 pub struct PluginStats {
     pub total_plugins: i64,
     pub total_downloads: i64,

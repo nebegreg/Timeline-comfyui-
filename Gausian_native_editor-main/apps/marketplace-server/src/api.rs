@@ -72,7 +72,9 @@ pub async fn create_plugin(
     }
 
     // Decode plugin file
-    let file_data = base64::decode(&req.file_data)
+    use base64::Engine;
+    let file_data = base64::engine::general_purpose::STANDARD
+        .decode(&req.file_data)
         .map_err(|_| ApiError::BadRequest("Invalid base64 file data".to_string()))?;
 
     let file_hash = format!("{:x}", sha2::Sha256::digest(&file_data));
