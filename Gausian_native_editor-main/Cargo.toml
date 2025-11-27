@@ -16,7 +16,8 @@ members = [
   "crates/collaboration", # Phase 7: Collaborative Editing
   "apps/desktop",
   "apps/comfywebview",
-  "apps/collab-server",   # Phase 7: Collaboration WebSocket Server
+  "apps/collab-server",      # Phase 7: Collaboration WebSocket Server
+  "apps/marketplace-server", # Phase 5: Plugin Marketplace Server
 ]
 
 resolver = "2"
