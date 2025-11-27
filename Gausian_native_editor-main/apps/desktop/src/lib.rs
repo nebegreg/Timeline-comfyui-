@@ -18,3 +18,7 @@ pub mod graph_editor;
 
 // Phase 7: Collaborative Editing - UI modules
 pub mod collab_ui;
+
+// Phase 5: Plugin Marketplace - UI modules
+pub mod marketplace_ui;
+pub mod plugin_details;
