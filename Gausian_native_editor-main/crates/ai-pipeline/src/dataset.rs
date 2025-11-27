@@ -1,6 +1,5 @@
 /// Dataset management for LoRA training
 /// Phase 4: Automatic LORA Creator
-
 use anyhow::{Context, Result};
 use image::{DynamicImage, GenericImageView, ImageFormat};
 use serde::{Deserialize, Serialize};
@@ -86,10 +85,7 @@ impl Dataset {
     pub fn stats(&self) -> DatasetStats {
         let total_captions = self.images.iter().filter(|i| !i.caption.is_empty()).count();
         let avg_caption_len = if total_captions > 0 {
-            self.images
-                .iter()
-                .map(|i| i.caption.len())
-                .sum::<usize>() as f32
+            self.images.iter().map(|i| i.caption.len()).sum::<usize>() as f32
                 / total_captions as f32
         } else {
             0.0
@@ -119,8 +115,7 @@ pub struct TrainingImage {
 impl TrainingImage {
     /// Load image from disk
     pub fn load_image(&self) -> Result<DynamicImage> {
-        image::open(&self.path)
-            .with_context(|| format!("Failed to load image: {:?}", self.path))
+        image::open(&self.path).with_context(|| format!("Failed to load image: {:?}", self.path))
     }
 
     /// Get image dimensions without loading full image

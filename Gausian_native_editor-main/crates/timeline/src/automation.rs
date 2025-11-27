@@ -10,7 +10,6 @@
 /// - Hold interpolation (maintain value)
 /// - Standard easing functions (ease-in, ease-out, ease-in-out)
 /// - Custom easing with tangent control
-
 use crate::{
     graph::{AutomationInterpolation, AutomationKeyframe, AutomationLane, KeyframeEasing},
     Frame,

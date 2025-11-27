@@ -2,7 +2,6 @@
 /// Phase 4: Automatic LORA Creator
 ///
 /// Provides automatic caption generation using BLIP2, LLaVA, or other models
-
 use anyhow::Result;
 use async_trait::async_trait;
 use image::DynamicImage;
@@ -248,10 +247,7 @@ pub mod postprocess {
         if caption.len() <= max_length {
             caption.to_string()
         } else {
-            let mut truncated = caption
-                .chars()
-                .take(max_length - 3)
-                .collect::<String>();
+            let mut truncated = caption.chars().take(max_length - 3).collect::<String>();
             truncated.push_str("...");
             truncated
         }

@@ -5,7 +5,6 @@
 ///
 /// Run with:
 /// cargo run --example configuration_presets --package ai-pipeline
-
 use ai_pipeline::lora_config::{LoraConfig, LoraRank, LrScheduler, MixedPrecision};
 
 fn main() {
@@ -39,10 +38,16 @@ fn print_config(config: &LoraConfig) {
     println!("   Learning Rate: {}", config.learning_rate);
     println!("   Batch Size: {}", config.batch_size);
     println!("   Epochs: {}", config.epochs);
-    println!("   Resolution: {}x{}", config.resolution.0, config.resolution.1);
+    println!(
+        "   Resolution: {}x{}",
+        config.resolution.0, config.resolution.1
+    );
     println!("   Mixed Precision: {:?}", config.mixed_precision);
     println!("   Train Text Encoder: {}", config.train_text_encoder);
-    println!("   Gradient Accumulation: {}", config.gradient_accumulation_steps);
+    println!(
+        "   Gradient Accumulation: {}",
+        config.gradient_accumulation_steps
+    );
     println!("   Learning Rate Scheduler: {:?}", config.lr_scheduler);
     println!("   Warmup Steps: {}", config.warmup_steps);
     println!("   8-bit Adam: {}", config.use_8bit_adam);
@@ -52,7 +57,10 @@ fn print_config(config: &LoraConfig) {
     let training_time = config.estimate_training_time(num_images);
     let vram = config.estimate_vram_gb();
 
-    println!("   Est. training time (100 images): {:.1} minutes", training_time);
+    println!(
+        "   Est. training time (100 images): {:.1} minutes",
+        training_time
+    );
     println!("   Est. VRAM usage: {:.1} GB", vram);
 }
 
@@ -113,7 +121,10 @@ fn print_vram_estimates() {
     let configs = vec![
         ("Default (Rank 16, 512x512)", LoraConfig::default()),
         ("SDXL (Rank 32, 1024x1024)", LoraConfig::sdxl_preset()),
-        ("High Quality (Rank 64, 768x768)", LoraConfig::high_quality_preset()),
+        (
+            "High Quality (Rank 64, 768x768)",
+            LoraConfig::high_quality_preset(),
+        ),
         ("Fast (Rank 8, 512x512)", LoraConfig::fast_preset()),
     ];
 
@@ -131,7 +142,10 @@ fn print_time_estimates() {
         ("Fast (5 epochs)", LoraConfig::fast_preset()),
         ("Standard (10 epochs)", LoraConfig::default()),
         ("SDXL (10 epochs)", LoraConfig::sdxl_preset()),
-        ("High Quality (20 epochs)", LoraConfig::high_quality_preset()),
+        (
+            "High Quality (20 epochs)",
+            LoraConfig::high_quality_preset(),
+        ),
     ];
 
     for (name, config) in configs {

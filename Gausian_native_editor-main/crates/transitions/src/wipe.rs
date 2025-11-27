@@ -1,6 +1,5 @@
 /// Wipe transition (directional reveal)
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Transition, TransitionCategory};
 use anyhow::Result;
 use wgpu;
@@ -171,7 +170,7 @@ impl Transition for WipeTransition {
         let uniform_bind_group_layout = self.uniform_bind_group_layout.as_ref().unwrap();
 
         let (dir_x, dir_y) = self.direction_vec();
-        let feather = 0.05;  // Edge softness
+        let feather = 0.05; // Edge softness
 
         let uniform_data = [progress, dir_x, dir_y, feather];
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

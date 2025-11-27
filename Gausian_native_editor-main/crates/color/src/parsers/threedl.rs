@@ -8,7 +8,6 @@
 /// - No explicit size declaration - inferred from line count
 /// - Comments start with #
 /// - First non-comment line can be a title
-
 use crate::lut3d::{Lut3D, LutFormat};
 use anyhow::{Context, Result};
 
@@ -30,7 +29,8 @@ pub fn parse_3dl(content: &str) -> Result<Lut3D> {
         if first_line {
             first_line = false;
             let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() == 1 && parts[0].parse::<f32>().is_err() {
+            // Check if first word is not a number (likely a title)
+            if !parts.is_empty() && parts[0].parse::<f32>().is_err() {
                 title = line.to_string();
                 continue;
             }
@@ -74,13 +74,7 @@ pub fn parse_3dl(content: &str) -> Result<Lut3D> {
     // Normalize data to 0-1 range
     let normalized_data: Vec<[f32; 3]> = data
         .into_iter()
-        .map(|[r, g, b]| {
-            [
-                r / input_range.1,
-                g / input_range.1,
-                b / input_range.1,
-            ]
-        })
+        .map(|[r, g, b]| [r / input_range.1, g / input_range.1, b / input_range.1])
         .collect();
 
     Ok(Lut3D {
@@ -103,9 +97,14 @@ fn infer_lut_size(count: usize) -> Option<u32> {
         }
     }
 
-    // Try to find cube root
+    // Try to find cube root for other valid sizes (2-256)
     let cube_root = (count as f64).cbrt().round() as usize;
-    if cube_root * cube_root * cube_root == count {
+    if cube_root >= 2
+        && cube_root <= 256
+        && cube_root * cube_root * cube_root == count
+        && ![10, 11, 12, 13, 14, 15, 16, 18, 19, 20].contains(&cube_root)
+    {
+        // Exclude uncommon sizes that are unlikely to be intentional LUTs
         return Some(cube_root as u32);
     }
 

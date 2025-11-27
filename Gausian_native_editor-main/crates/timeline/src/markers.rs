@@ -1,6 +1,5 @@
 /// Timeline markers and regions system
 /// Phase 1: Timeline Polish & UX Improvements
-
 use crate::Frame;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -276,8 +275,7 @@ impl MarkerCollection {
         // Remove existing In marker
         self.markers.retain(|_, m| m.marker_type != MarkerType::In);
 
-        let marker = Marker::new(frame, "In".to_string())
-            .with_type(MarkerType::In);
+        let marker = Marker::new(frame, "In".to_string()).with_type(MarkerType::In);
         self.add_marker(marker)
     }
 
@@ -286,15 +284,13 @@ impl MarkerCollection {
         // Remove existing Out marker
         self.markers.retain(|_, m| m.marker_type != MarkerType::Out);
 
-        let marker = Marker::new(frame, "Out".to_string())
-            .with_type(MarkerType::Out);
+        let marker = Marker::new(frame, "Out".to_string()).with_type(MarkerType::Out);
         self.add_marker(marker)
     }
 
     /// Clear In/Out points
     pub fn clear_in_out(&mut self) {
-        self.markers.retain(|_, m| {
-            m.marker_type != MarkerType::In && m.marker_type != MarkerType::Out
-        });
+        self.markers
+            .retain(|_, m| m.marker_type != MarkerType::In && m.marker_type != MarkerType::Out);
     }
 }

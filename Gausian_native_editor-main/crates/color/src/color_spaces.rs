@@ -1,6 +1,5 @@
 /// Color space utilities
 /// Phase 3: Advanced Color Management & LUTs
-
 use glam::{Mat3, Vec3};
 
 /// Get color space conversion matrix
@@ -21,58 +20,42 @@ pub fn get_conversion_matrix(from: super::ColorSpace, to: super::ColorSpace) -> 
 
         // Rec.709 -> Rec.2020
         (Rec709, Rec2020) => Mat3::from_cols_array(&[
-            0.627, 0.069, 0.016,
-            0.329, 0.920, 0.088,
-            0.043, 0.011, 0.896,
+            0.627, 0.069, 0.016, 0.329, 0.920, 0.088, 0.043, 0.011, 0.896,
         ]),
 
         // Rec.2020 -> Rec.709
         (Rec2020, Rec709) => Mat3::from_cols_array(&[
-            1.661, -0.125, -0.018,
-            -0.588, 1.133, -0.100,
-            -0.073, -0.008, 1.118,
+            1.661, -0.125, -0.018, -0.588, 1.133, -0.100, -0.073, -0.008, 1.118,
         ]),
 
         // Rec.709 -> ACEScg
         (Rec709, AcesCg) => Mat3::from_cols_array(&[
-            0.613, 0.070, 0.021,
-            0.341, 0.918, 0.106,
-            0.046, 0.012, 0.873,
+            0.613, 0.070, 0.021, 0.341, 0.918, 0.106, 0.046, 0.012, 0.873,
         ]),
 
         // ACEScg -> Rec.709
         (AcesCg, Rec709) => Mat3::from_cols_array(&[
-            1.705, -0.130, -0.024,
-            -0.622, 1.141, -0.129,
-            -0.083, -0.011, 1.153,
+            1.705, -0.130, -0.024, -0.622, 1.141, -0.129, -0.083, -0.011, 1.153,
         ]),
 
         // ACEScg -> ACES 2065-1 (AP0)
         (AcesCg, Aces2065) => Mat3::from_cols_array(&[
-            0.695, 0.140, 0.164,
-            0.045, 0.860, 0.095,
-            -0.001, 0.000, 1.001,
+            0.695, 0.140, 0.164, 0.045, 0.860, 0.095, -0.001, 0.000, 1.001,
         ]),
 
         // ACES 2065-1 -> ACEScg
         (Aces2065, AcesCg) => Mat3::from_cols_array(&[
-            1.451, -0.237, -0.214,
-            -0.077, 1.176, -0.099,
-            0.008, 0.001, 0.998,
+            1.451, -0.237, -0.214, -0.077, 1.176, -0.099, 0.008, 0.001, 0.998,
         ]),
 
         // DCI-P3 -> Linear
         (DciP3, LinearRgb) => Mat3::from_cols_array(&[
-            0.822, 0.033, 0.017,
-            0.178, 0.967, 0.000,
-            0.000, 0.000, 0.983,
+            0.822, 0.033, 0.017, 0.178, 0.967, 0.000, 0.000, 0.000, 0.983,
         ]),
 
         // Linear -> DCI-P3
         (LinearRgb, DciP3) => Mat3::from_cols_array(&[
-            1.225, -0.042, -0.020,
-            -0.225, 1.042, 0.000,
-            0.000, 0.000, 1.018,
+            1.225, -0.042, -0.020, -0.225, 1.042, 0.000, 0.000, 0.000, 1.018,
         ]),
 
         // Default: return identity and handle in calling code
@@ -218,6 +201,7 @@ pub fn transform_color(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ColorSpace;
 
     #[test]
     fn test_srgb_roundtrip() {
@@ -230,7 +214,7 @@ mod tests {
     #[test]
     fn test_identity_transform() {
         let color = [0.5, 0.3, 0.7];
-        let matrix = get_conversion_matrix(super::ColorSpace::Rec709, super::ColorSpace::Rec709);
+        let matrix = get_conversion_matrix(ColorSpace::Rec709, ColorSpace::Rec709);
         let rgb = Vec3::from_array(color);
         let result = matrix * rgb;
         let diff = (result - rgb).length();

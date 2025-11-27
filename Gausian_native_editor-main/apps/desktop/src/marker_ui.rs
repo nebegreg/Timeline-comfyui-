@@ -1,6 +1,5 @@
 /// Marker management UI
 /// Phase 1: Timeline Polish & UX
-
 use eframe::egui;
 use timeline::{Marker, MarkerCollection, MarkerId, MarkerType, Region};
 
@@ -23,12 +22,7 @@ impl Default for MarkerPanel {
 
 impl MarkerPanel {
     /// Draw marker list panel
-    pub fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        markers: &mut MarkerCollection,
-        current_frame: i64,
-    ) {
+    pub fn ui(&mut self, ui: &mut egui::Ui, markers: &mut MarkerCollection, current_frame: i64) {
         ui.heading("Markers");
         ui.separator();
 
@@ -42,8 +36,7 @@ impl MarkerPanel {
                     self.new_marker_label.clone()
                 };
 
-                let marker = Marker::new(current_frame, label)
-                    .with_type(self.new_marker_type);
+                let marker = Marker::new(current_frame, label).with_type(self.new_marker_type);
                 markers.add_marker(marker);
                 self.new_marker_label.clear();
             }
@@ -55,7 +48,11 @@ impl MarkerPanel {
             egui::ComboBox::from_id_salt("marker_type")
                 .selected_text(format!("{:?}", self.new_marker_type))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.new_marker_type, MarkerType::Standard, "Standard");
+                    ui.selectable_value(
+                        &mut self.new_marker_type,
+                        MarkerType::Standard,
+                        "Standard",
+                    );
                     ui.selectable_value(&mut self.new_marker_type, MarkerType::Chapter, "Chapter");
                     ui.selectable_value(&mut self.new_marker_type, MarkerType::Comment, "Comment");
                     ui.selectable_value(&mut self.new_marker_type, MarkerType::Todo, "TODO");
@@ -78,8 +75,12 @@ impl MarkerPanel {
         });
 
         if let Some((in_frame, out_frame)) = markers.get_in_out_range() {
-            ui.label(format!("📍 In: {} | Out: {} (Duration: {})",
-                in_frame, out_frame, out_frame - in_frame));
+            ui.label(format!(
+                "📍 In: {} | Out: {} (Duration: {})",
+                in_frame,
+                out_frame,
+                out_frame - in_frame
+            ));
         }
 
         ui.separator();
@@ -95,7 +96,8 @@ impl MarkerPanel {
                 ui.horizontal(|ui| {
                     let response = ui.selectable_label(
                         is_selected,
-                        format!("{}  {} @ {}",
+                        format!(
+                            "{}  {} @ {}",
                             marker_type_icon(marker.marker_type),
                             marker.label,
                             marker.frame
@@ -118,27 +120,19 @@ impl MarkerPanel {
                 // Show note if present
                 if !marker.note.is_empty() {
                     ui.indent(marker.id, |ui| {
-                        ui.label(egui::RichText::new(&marker.note)
-                            .italics()
-                            .weak());
+                        ui.label(egui::RichText::new(&marker.note).italics().weak());
                     });
                 }
             }
 
             if sorted_markers.is_empty() {
-                ui.label(egui::RichText::new("No markers yet")
-                    .weak()
-                    .italics());
+                ui.label(egui::RichText::new("No markers yet").weak().italics());
             }
         });
     }
 
     /// Draw marker editor (for selected marker)
-    pub fn marker_editor(
-        &mut self,
-        ui: &mut egui::Ui,
-        markers: &mut MarkerCollection,
-    ) {
+    pub fn marker_editor(&mut self, ui: &mut egui::Ui, markers: &mut MarkerCollection) {
         if let Some(marker_id) = self.selected_marker {
             if let Some(marker) = markers.get_marker_mut(&marker_id) {
                 ui.heading("Edit Marker");
@@ -159,11 +153,31 @@ impl MarkerPanel {
                     egui::ComboBox::from_id_salt("edit_marker_type")
                         .selected_text(format!("{:?}", marker.marker_type))
                         .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut marker.marker_type, MarkerType::Standard, "Standard");
-                            ui.selectable_value(&mut marker.marker_type, MarkerType::In, "In Point");
-                            ui.selectable_value(&mut marker.marker_type, MarkerType::Out, "Out Point");
-                            ui.selectable_value(&mut marker.marker_type, MarkerType::Chapter, "Chapter");
-                            ui.selectable_value(&mut marker.marker_type, MarkerType::Comment, "Comment");
+                            ui.selectable_value(
+                                &mut marker.marker_type,
+                                MarkerType::Standard,
+                                "Standard",
+                            );
+                            ui.selectable_value(
+                                &mut marker.marker_type,
+                                MarkerType::In,
+                                "In Point",
+                            );
+                            ui.selectable_value(
+                                &mut marker.marker_type,
+                                MarkerType::Out,
+                                "Out Point",
+                            );
+                            ui.selectable_value(
+                                &mut marker.marker_type,
+                                MarkerType::Chapter,
+                                "Chapter",
+                            );
+                            ui.selectable_value(
+                                &mut marker.marker_type,
+                                MarkerType::Comment,
+                                "Comment",
+                            );
                             ui.selectable_value(&mut marker.marker_type, MarkerType::Todo, "TODO");
                         });
                 });
@@ -178,9 +192,7 @@ impl MarkerPanel {
                 ui.text_edit_multiline(&mut marker.note);
             }
         } else {
-            ui.label(egui::RichText::new("No marker selected")
-                .weak()
-                .italics());
+            ui.label(egui::RichText::new("No marker selected").weak().italics());
         }
     }
 }
@@ -212,11 +224,7 @@ impl Default for RegionPanel {
 
 impl RegionPanel {
     /// Draw region list
-    pub fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        markers: &mut MarkerCollection,
-    ) {
+    pub fn ui(&mut self, ui: &mut egui::Ui, markers: &mut MarkerCollection) {
         ui.heading("Regions");
         ui.separator();
 
@@ -237,9 +245,11 @@ impl RegionPanel {
                 }
             });
         } else {
-            ui.label(egui::RichText::new("Set In/Out points to create a region")
-                .weak()
-                .italics());
+            ui.label(
+                egui::RichText::new("Set In/Out points to create a region")
+                    .weak()
+                    .italics(),
+            );
         }
 
         ui.separator();
@@ -250,7 +260,8 @@ impl RegionPanel {
 
             for region in regions {
                 ui.horizontal(|ui| {
-                    ui.label(format!("📏 {} ({} → {} = {} frames)",
+                    ui.label(format!(
+                        "📏 {} ({} → {} = {} frames)",
                         region.label,
                         region.start,
                         region.end,
@@ -264,17 +275,13 @@ impl RegionPanel {
 
                 if !region.note.is_empty() {
                     ui.indent(region.id, |ui| {
-                        ui.label(egui::RichText::new(&region.note)
-                            .italics()
-                            .weak());
+                        ui.label(egui::RichText::new(&region.note).italics().weak());
                     });
                 }
             }
 
             if regions.is_empty() {
-                ui.label(egui::RichText::new("No regions yet")
-                    .weak()
-                    .italics());
+                ui.label(egui::RichText::new("No regions yet").weak().italics());
             }
         });
     }

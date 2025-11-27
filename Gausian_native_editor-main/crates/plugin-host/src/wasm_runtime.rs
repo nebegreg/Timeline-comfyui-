@@ -18,7 +18,12 @@ pub struct WasmPluginState {
 }
 
 impl ResourceLimiter for WasmPluginState {
-    fn memory_growing(&mut self, _current: usize, desired: usize, _maximum: Option<usize>) -> Result<bool, anyhow::Error> {
+    fn memory_growing(
+        &mut self,
+        _current: usize,
+        desired: usize,
+        _maximum: Option<usize>,
+    ) -> Result<bool, anyhow::Error> {
         // Check if new size would exceed limit
         if desired > self.memory_limit {
             return Ok(false); // Deny the allocation
@@ -28,7 +33,12 @@ impl ResourceLimiter for WasmPluginState {
         Ok(true) // Allow the allocation
     }
 
-    fn table_growing(&mut self, _current: usize, desired: usize, _maximum: Option<usize>) -> Result<bool, anyhow::Error> {
+    fn table_growing(
+        &mut self,
+        _current: usize,
+        desired: usize,
+        _maximum: Option<usize>,
+    ) -> Result<bool, anyhow::Error> {
         // Allow reasonable table sizes (for function references, etc.)
         Ok(desired < 10_000)
     }

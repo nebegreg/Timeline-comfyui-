@@ -3,7 +3,6 @@
 ///
 /// Provides waveform, vectorscope, histogram, and parade scopes
 /// for professional color grading and analysis
-
 use anyhow::Result;
 use wgpu;
 
@@ -175,14 +174,15 @@ impl ScopeAnalyzer {
             cache: None,
         });
 
-        let vectorscope_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("Vectorscope Pipeline"),
-            layout: Some(&pipeline_layout),
-            module: &vectorscope_shader,
-            entry_point: "main",
-            compilation_options: Default::default(),
-            cache: None,
-        });
+        let vectorscope_pipeline =
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Vectorscope Pipeline"),
+                layout: Some(&pipeline_layout),
+                module: &vectorscope_shader,
+                entry_point: "main",
+                compilation_options: Default::default(),
+                cache: None,
+            });
 
         let histogram_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Histogram Pipeline"),
@@ -210,21 +210,27 @@ impl ScopeAnalyzer {
         self.waveform_buffer = Some(device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Waveform Buffer"),
             size: buffer_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
 
         self.vectorscope_buffer = Some(device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vectorscope Buffer"),
             size: buffer_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
 
         self.histogram_buffer = Some(device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Histogram Buffer"),
             size: buffer_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         }));
     }
@@ -300,7 +306,11 @@ impl ScopeAnalyzer {
         _queue: &wgpu::Queue,
     ) -> Result<ScopeData> {
         // TODO: Implement parade scope (3 separate waveforms for R/G/B)
-        Ok(ScopeData::new(ScopeType::Parade, self.scope_width, self.scope_height))
+        Ok(ScopeData::new(
+            ScopeType::Parade,
+            self.scope_width,
+            self.scope_height,
+        ))
     }
 
     fn run_compute_shader(

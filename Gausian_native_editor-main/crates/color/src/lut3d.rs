@@ -1,6 +1,5 @@
 /// 3D LUT (Lookup Table) system
 /// Phase 3: Advanced Color Management & LUTs
-
 use anyhow::{Context, Result};
 use std::path::Path;
 use wgpu;
@@ -27,9 +26,9 @@ pub struct Lut3D {
 /// LUT file format
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LutFormat {
-    Cube,   // Adobe .cube
+    Cube,    // Adobe .cube
     ThreeDL, // Autodesk .3dl
-    Csp,    // Rising Sun .csp
+    Csp,     // Rising Sun .csp
 }
 
 impl Lut3D {
@@ -142,12 +141,12 @@ impl Lut3D {
     /// Sample LUT at RGB coordinate (for CPU-side preview)
     pub fn sample(&self, r: f32, g: f32, b: f32) -> [f32; 3] {
         // Normalize input to LUT coordinates
-        let r_norm = ((r - self.input_range.0) / (self.input_range.1 - self.input_range.0))
-            .clamp(0.0, 1.0);
-        let g_norm = ((g - self.input_range.0) / (self.input_range.1 - self.input_range.0))
-            .clamp(0.0, 1.0);
-        let b_norm = ((b - self.input_range.0) / (self.input_range.1 - self.input_range.0))
-            .clamp(0.0, 1.0);
+        let r_norm =
+            ((r - self.input_range.0) / (self.input_range.1 - self.input_range.0)).clamp(0.0, 1.0);
+        let g_norm =
+            ((g - self.input_range.0) / (self.input_range.1 - self.input_range.0)).clamp(0.0, 1.0);
+        let b_norm =
+            ((b - self.input_range.0) / (self.input_range.1 - self.input_range.0)).clamp(0.0, 1.0);
 
         // Map to LUT indices
         let r_idx = (r_norm * (self.size - 1) as f32) as usize;
@@ -155,9 +154,7 @@ impl Lut3D {
         let b_idx = (b_norm * (self.size - 1) as f32) as usize;
 
         // Linear index
-        let idx = b_idx * (self.size * self.size) as usize
-            + g_idx * self.size as usize
-            + r_idx;
+        let idx = b_idx * (self.size * self.size) as usize + g_idx * self.size as usize + r_idx;
 
         self.data[idx]
     }

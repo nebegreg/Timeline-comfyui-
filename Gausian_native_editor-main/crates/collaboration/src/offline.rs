@@ -1,6 +1,5 @@
 /// Offline support for collaborative editing
 /// Queue operations when offline and sync when reconnected
-
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -179,10 +178,7 @@ impl OfflineQueueManager {
 
     /// Get number of pending operations
     pub fn pending_count(&self) -> usize {
-        self.current_queue
-            .as_ref()
-            .map(|q| q.len())
-            .unwrap_or(0)
+        self.current_queue.as_ref().map(|q| q.len()).unwrap_or(0)
     }
 }
 
@@ -254,8 +250,8 @@ fn optimize_operations(operations: Vec<TimelineOperation>) -> Vec<TimelineOperat
     // For example, if we have multiple position updates for the same node,
     // keep only the latest one
 
-    use std::collections::HashMap;
     use crate::OperationKind;
+    use std::collections::HashMap;
 
     let mut optimized = Vec::new();
     let mut position_updates: HashMap<timeline::NodeId, TimelineOperation> = HashMap::new();

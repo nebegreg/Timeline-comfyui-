@@ -1,6 +1,5 @@
 /// Saturation/Hue effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -135,7 +134,9 @@ impl Effect for SaturationHueEffect {
                 default: 100.0,
                 min: 0.0,
                 max: 200.0,
-                description: "Adjust color saturation (0=grayscale, 100=normal, 200=super saturated)".to_string(),
+                description:
+                    "Adjust color saturation (0=grayscale, 100=normal, 200=super saturated)"
+                        .to_string(),
             },
             EffectParameter {
                 name: "hue".to_string(),
@@ -157,7 +158,7 @@ impl Effect for SaturationHueEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();

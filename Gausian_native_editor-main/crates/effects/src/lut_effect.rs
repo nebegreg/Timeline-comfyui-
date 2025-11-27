@@ -1,6 +1,5 @@
 /// 3D LUT Color Grading Effect
 /// Phase 3: Advanced Color Management & LUTs
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -220,7 +219,7 @@ impl Effect for LutEffect {
         let intensity = self.get_param(params, "intensity") / 100.0;
 
         // Initialize pipeline if needed
-        let mut mutable_self = unsafe {
+        let mutable_self = unsafe {
             // SAFETY: We need mutable access to initialize pipeline
             &mut *(self as *const Self as *mut Self)
         };

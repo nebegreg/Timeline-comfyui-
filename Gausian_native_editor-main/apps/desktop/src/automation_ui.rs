@@ -2,11 +2,10 @@
 ///
 /// This module provides UI components for visualizing and editing automation lanes
 /// in the timeline, including keyframe manipulation and curve previews.
-
 use eframe::egui::{self, Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
 use timeline::{
-    AutomationEngine, AutomationInterpolation, AutomationKeyframe, AutomationLane,
-    KeyframeEasing, Frame,
+    AutomationEngine, AutomationInterpolation, AutomationKeyframe, AutomationLane, Frame,
+    KeyframeEasing,
 };
 
 /// Visual constants for automation lane rendering
@@ -73,11 +72,7 @@ pub fn render_automation_lane(
         let painter = ui.painter();
 
         // Draw background
-        painter.rect_filled(
-            rect,
-            0.0,
-            Color32::from_rgba_unmultiplied(30, 30, 30, 200),
-        );
+        painter.rect_filled(rect, 0.0, Color32::from_rgba_unmultiplied(30, 30, 30, 200));
 
         // Draw grid lines (horizontal value indicators)
         draw_value_grid(painter, rect, state.value_range);
@@ -112,7 +107,8 @@ pub fn render_automation_lane(
 
         // Draw playhead position indicator
         if current_frame >= scroll_offset {
-            let playhead_x = rect.left() + ((current_frame - scroll_offset) as f32 * pixels_per_frame);
+            let playhead_x =
+                rect.left() + ((current_frame - scroll_offset) as f32 * pixels_per_frame);
             if playhead_x >= rect.left() && playhead_x <= rect.right() {
                 painter.vline(
                     playhead_x,
@@ -209,11 +205,7 @@ fn draw_value_grid(painter: &egui::Painter, rect: Rect, value_range: (f64, f64))
         let t = i as f32 / num_lines as f32;
         let y = rect.top() + (rect.height() * (1.0 - t)); // Invert Y axis
 
-        painter.hline(
-            rect.left()..=rect.right(),
-            y,
-            Stroke::new(1.0, GRID_COLOR),
-        );
+        painter.hline(rect.left()..=rect.right(), y, Stroke::new(1.0, GRID_COLOR));
 
         // Draw value label
         let value = value_range.0 + (value_range.1 - value_range.0) * t as f64;
@@ -265,10 +257,7 @@ fn draw_automation_curve(
 
     // Draw curve as polyline
     if points.len() >= 2 {
-        painter.add(egui::Shape::line(
-            points,
-            Stroke::new(2.0, CURVE_COLOR),
-        ));
+        painter.add(egui::Shape::line(points, Stroke::new(2.0, CURVE_COLOR)));
     }
 }
 
@@ -296,8 +285,16 @@ fn draw_keyframe(
         return;
     }
 
-    let radius = if selected { KEYFRAME_HOVER_RADIUS } else { KEYFRAME_RADIUS };
-    let color = if selected { KEYFRAME_SELECTED_COLOR } else { KEYFRAME_COLOR };
+    let radius = if selected {
+        KEYFRAME_HOVER_RADIUS
+    } else {
+        KEYFRAME_RADIUS
+    };
+    let color = if selected {
+        KEYFRAME_SELECTED_COLOR
+    } else {
+        KEYFRAME_COLOR
+    };
 
     // Draw outer circle (white)
     painter.circle_filled(pos, radius + 1.0, Color32::WHITE);
@@ -414,9 +411,11 @@ pub fn keyframe_inspector(
             // Value slider
             ui.horizontal(|ui| {
                 ui.label("Value:");
-                ui.add(egui::DragValue::new(&mut keyframe.value)
-                    .speed(0.01)
-                    .clamp_range(0.0..=1.0));
+                ui.add(
+                    egui::DragValue::new(&mut keyframe.value)
+                        .speed(0.01)
+                        .clamp_range(0.0..=1.0),
+                );
             });
 
             // Easing selector
@@ -426,14 +425,30 @@ pub fn keyframe_inspector(
                     .selected_text(easing_name(&keyframe.easing))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut keyframe.easing, KeyframeEasing::Linear, "Linear");
-                        ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseIn, "Ease In");
-                        ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseOut, "Ease Out");
-                        ui.selectable_value(&mut keyframe.easing, KeyframeEasing::EaseInOut, "Ease In-Out");
+                        ui.selectable_value(
+                            &mut keyframe.easing,
+                            KeyframeEasing::EaseIn,
+                            "Ease In",
+                        );
+                        ui.selectable_value(
+                            &mut keyframe.easing,
+                            KeyframeEasing::EaseOut,
+                            "Ease Out",
+                        );
+                        ui.selectable_value(
+                            &mut keyframe.easing,
+                            KeyframeEasing::EaseInOut,
+                            "Ease In-Out",
+                        );
                     });
             });
 
             // Custom tangents (if custom easing)
-            if let KeyframeEasing::Custom { in_tangent, out_tangent } = &mut keyframe.easing {
+            if let KeyframeEasing::Custom {
+                in_tangent,
+                out_tangent,
+            } = &mut keyframe.easing
+            {
                 ui.horizontal(|ui| {
                     ui.label("In Tangent:");
                     ui.add(egui::Slider::new(in_tangent, 0.0..=1.0));
@@ -453,9 +468,21 @@ pub fn keyframe_inspector(
                 egui::ComboBox::from_id_salt("interpolation_selector")
                     .selected_text(interpolation_name(&lane.interpolation))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Linear, "Linear");
-                        ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Step, "Step");
-                        ui.selectable_value(&mut lane.interpolation, AutomationInterpolation::Bezier, "Bézier");
+                        ui.selectable_value(
+                            &mut lane.interpolation,
+                            AutomationInterpolation::Linear,
+                            "Linear",
+                        );
+                        ui.selectable_value(
+                            &mut lane.interpolation,
+                            AutomationInterpolation::Step,
+                            "Step",
+                        );
+                        ui.selectable_value(
+                            &mut lane.interpolation,
+                            AutomationInterpolation::Bezier,
+                            "Bézier",
+                        );
                     });
             });
         } else {

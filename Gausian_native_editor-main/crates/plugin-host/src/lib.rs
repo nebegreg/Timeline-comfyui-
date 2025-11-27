@@ -2,12 +2,10 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
 use std::sync::Arc;
 use thiserror::Error;
-use timeline::{Item, ItemKind, Sequence};
-use tokio::sync::{mpsc, RwLock};
-use uuid::Uuid;
+use timeline::{Item, Sequence};
+use tokio::sync::RwLock;
 use wasmtime::*;
 
 pub mod marketplace;
@@ -391,8 +389,10 @@ impl PluginHost {
             .ok_or_else(|| PluginError::SecurityViolation("Plugin has no signature".to_string()))?;
 
         // Parse signature from JSON
-        let signature: signatures::PluginSignature = serde_json::from_str(signature_str)
-            .map_err(|e| PluginError::SecurityViolation(format!("Invalid signature format: {}", e)))?;
+        let signature: signatures::PluginSignature =
+            serde_json::from_str(signature_str).map_err(|e| {
+                PluginError::SecurityViolation(format!("Invalid signature format: {}", e))
+            })?;
 
         // Create signature verifier
         let verifier = signatures::SignatureVerifier::new();
@@ -400,9 +400,8 @@ impl PluginHost {
         // Verify signature (blocking operation, but runs rarely during plugin load)
         let plugin_dir = plugin_dir.to_path_buf();
         let is_valid = tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(async {
-                verifier.verify_plugin(&plugin_dir, &signature).await
-            })
+            tokio::runtime::Handle::current()
+                .block_on(async { verifier.verify_plugin(&plugin_dir, &signature).await })
         })?;
 
         if !is_valid {
@@ -413,7 +412,11 @@ impl PluginHost {
             .into());
         }
 
-        tracing::info!("Plugin signature verified: {} by {}", manifest.name, signature.signer);
+        tracing::info!(
+            "Plugin signature verified: {} by {}",
+            manifest.name,
+            signature.signer
+        );
         Ok(())
     }
 
@@ -428,10 +431,9 @@ impl PluginHost {
 
         // Execute the plugin in a blocking task (WASM execution is CPU-bound)
         let module = module.clone();
-        let result = tokio::task::spawn_blocking(move || {
-            wasm_runtime.execute_plugin(&module, context)
-        })
-        .await??;
+        let result =
+            tokio::task::spawn_blocking(move || wasm_runtime.execute_plugin(&module, context))
+                .await??;
 
         Ok(result)
     }

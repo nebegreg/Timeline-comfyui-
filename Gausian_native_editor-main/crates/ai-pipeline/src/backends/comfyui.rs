@@ -3,11 +3,10 @@
 ///
 /// Integrates with ComfyUI for LORA training via workflows
 /// Supports both local and remote ComfyUI instances
-
 use super::{BackendConfig, BackendType, TrainingBackend};
 use crate::dataset::Dataset;
 use crate::lora_config::LoraConfig;
-use crate::training::{JobId, TrainingProgress, JobStatus};
+use crate::training::{JobId, JobStatus, TrainingProgress};
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
@@ -23,9 +22,7 @@ pub struct ComfyUIBackend {
 impl ComfyUIBackend {
     /// Create new ComfyUI backend
     pub fn new(config: BackendConfig) -> Result<Self> {
-        let api_url = config
-            .api_url
-            .context("ComfyUI backend requires api_url")?;
+        let api_url = config.api_url.context("ComfyUI backend requires api_url")?;
 
         Ok(Self {
             api_url,
@@ -126,11 +123,9 @@ impl ComfyUIBackend {
     }
 
     /// Submit job to ComfyUI
-    async fn submit_to_comfyui(
-        &self,
-        workflow: serde_json::Value,
-    ) -> Result<String> {
-        let response = self.client
+    async fn submit_to_comfyui(&self, workflow: serde_json::Value) -> Result<String> {
+        let response = self
+            .client
             .post(format!("{}/prompt", self.api_url))
             .json(&serde_json::json!({
                 "prompt": workflow,
@@ -153,7 +148,8 @@ impl ComfyUIBackend {
 
     /// Poll job progress from ComfyUI
     async fn poll_job_progress(&self, job_id: &str) -> Result<ComfyUIJobStatus> {
-        let response = self.client
+        let response = self
+            .client
             .get(format!("{}/history/{}", self.api_url, job_id))
             .send()
             .await?;
@@ -162,8 +158,7 @@ impl ComfyUIBackend {
             anyhow::bail!("Failed to get job history: {}", response.status());
         }
 
-        let history: std::collections::HashMap<String, ComfyUIHistory> =
-            response.json().await?;
+        let history: std::collections::HashMap<String, ComfyUIHistory> = response.json().await?;
 
         if let Some(entry) = history.values().next() {
             Ok(ComfyUIJobStatus::from(entry))
@@ -184,7 +179,8 @@ impl TrainingBackend for ComfyUIBackend {
     }
 
     async fn is_available(&self) -> Result<bool> {
-        match self.client
+        match self
+            .client
             .get(format!("{}/system_stats", self.api_url))
             .send()
             .await
@@ -299,16 +295,18 @@ enum ComfyUIJobStatus {
 
 impl From<&ComfyUIHistory> for ComfyUIJobStatus {
     fn from(history: &ComfyUIHistory) -> Self {
-        let has_outputs = history.outputs.as_object().map(|o| !o.is_empty()).unwrap_or(false);
+        let has_outputs = history
+            .outputs
+            .as_object()
+            .map(|o| !o.is_empty())
+            .unwrap_or(false);
 
         if !has_outputs {
             ComfyUIJobStatus::Queued
         } else if history.status.is_some() {
             ComfyUIJobStatus::Completed
         } else {
-            ComfyUIJobStatus::Running {
-                steps_completed: 0,
-            }
+            ComfyUIJobStatus::Running { steps_completed: 0 }
         }
     }
 }
@@ -326,11 +324,8 @@ mod tests {
 
     #[test]
     fn test_comfyui_backend_creation() {
-        let config = BackendConfig::new(
-            BackendType::ComfyUI,
-            PathBuf::from("/tmp/lora"),
-        )
-        .with_api_url("http://localhost:8188".to_string());
+        let config = BackendConfig::new(BackendType::ComfyUI, PathBuf::from("/tmp/lora"))
+            .with_api_url("http://localhost:8188".to_string());
 
         let backend = ComfyUIBackend::new(config).unwrap();
         assert_eq!(backend.name(), "ComfyUI");
@@ -339,18 +334,19 @@ mod tests {
 
     #[test]
     fn test_comfyui_workflow_generation() {
-        let config = BackendConfig::new(
-            BackendType::ComfyUI,
-            PathBuf::from("/tmp/lora"),
-        )
-        .with_api_url("http://localhost:8188".to_string());
+        let config = BackendConfig::new(BackendType::ComfyUI, PathBuf::from("/tmp/lora"))
+            .with_api_url("http://localhost:8188".to_string());
 
         let backend = ComfyUIBackend::new(config).unwrap();
         let dataset = crate::dataset::Dataset::new(vec![]);
         let lora_config = LoraConfig::default();
 
         let workflow = backend
-            .generate_workflow("stabilityai/stable-diffusion-xl-base-1.0", &dataset, &lora_config)
+            .generate_workflow(
+                "stabilityai/stable-diffusion-xl-base-1.0",
+                &dataset,
+                &lora_config,
+            )
             .unwrap();
 
         assert!(workflow["metadata"]["lora_training"]["base_model"]

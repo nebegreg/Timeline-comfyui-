@@ -1,7 +1,6 @@
 /// Corner Pin Effect
 /// 4-point perspective transformation for geometric distortion
 /// Phase 2: Geometric Effects
-
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
 use std::collections::HashMap;
@@ -51,19 +50,21 @@ impl CornerPinEffect {
     /// Calculate perspective transformation matrix from 4 corner points
     /// Uses homography estimation
     fn calculate_perspective_matrix(
-        tl: [f32; 2], tr: [f32; 2],
-        bl: [f32; 2], br: [f32; 2],
+        tl: [f32; 2],
+        tr: [f32; 2],
+        bl: [f32; 2],
+        br: [f32; 2],
     ) -> [[f32; 4]; 4] {
         // Source corners (unit square)
-        let src = [
-            [0.0, 0.0],  // Top-left
-            [1.0, 0.0],  // Top-right
-            [0.0, 1.0],  // Bottom-left
-            [1.0, 1.0],  // Bottom-right
+        let _src = [
+            [0.0, 0.0], // Top-left
+            [1.0, 0.0], // Top-right
+            [0.0, 1.0], // Bottom-left
+            [1.0, 1.0], // Bottom-right
         ];
 
         // Destination corners
-        let dst = [tl, tr, bl, br];
+        let _dst = [tl, tr, bl, br];
 
         // Compute homography using Direct Linear Transform (DLT)
         // For simplicity, we use a basic bilinear interpolation approximation
@@ -113,37 +114,39 @@ impl CornerPinEffect {
         }));
 
         // Bind group layout
-        self.bind_group_layout = Some(device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Corner Pin Bind Group Layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+        self.bind_group_layout = Some(device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("Corner Pin Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        }));
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+            },
+        ));
 
         // Shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -158,31 +161,33 @@ impl CornerPinEffect {
             push_constant_ranges: &[],
         });
 
-        self.pipeline = Some(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Corner Pin Pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[],
-                compilation_options: Default::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: Default::default(),
+        self.pipeline = Some(
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Corner Pin Pipeline"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                    compilation_options: Default::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: Default::default(),
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+                cache: None,
             }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-            cache: None,
-        }));
+        );
     }
 }
 
@@ -216,7 +221,6 @@ impl Effect for CornerPinEffect {
                 max: 200.0,
                 description: "Top-left corner Y position".to_string(),
             },
-
             // Top-right corner
             EffectParameter {
                 name: "tr_x".to_string(),
@@ -236,7 +240,6 @@ impl Effect for CornerPinEffect {
                 max: 200.0,
                 description: "Top-right corner Y position".to_string(),
             },
-
             // Bottom-left corner
             EffectParameter {
                 name: "bl_x".to_string(),
@@ -256,7 +259,6 @@ impl Effect for CornerPinEffect {
                 max: 200.0,
                 description: "Bottom-left corner Y position".to_string(),
             },
-
             // Bottom-right corner
             EffectParameter {
                 name: "br_x".to_string(),
@@ -338,7 +340,7 @@ impl Effect for CornerPinEffect {
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(
-                        &input.create_view(&Default::default())
+                        &input.create_view(&Default::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {

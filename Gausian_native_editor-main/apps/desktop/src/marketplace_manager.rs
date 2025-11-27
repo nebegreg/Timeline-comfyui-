@@ -3,12 +3,12 @@
 ///
 /// Handles async marketplace operations in a background thread and communicates
 /// with the egui UI via channels.
-
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
 use plugin_host::marketplace::{
-    MarketplacePlugin, PluginMarketplace, SearchQuery as MpSearchQuery, SearchResults as MpSearchResults,
+    MarketplacePlugin, PluginMarketplace, SearchQuery as MpSearchQuery,
+    SearchResults as MpSearchResults,
 };
 
 // Re-export types for convenience
@@ -50,7 +50,11 @@ pub enum MarketplaceResponse {
     InstallProgress { plugin_id: String, progress: f32 },
 
     /// Plugin installation complete
-    InstallComplete { plugin_id: String, success: bool, error: Option<String> },
+    InstallComplete {
+        plugin_id: String,
+        success: bool,
+        error: Option<String>,
+    },
 
     /// Plugin details ready
     PluginDetails(MarketplacePlugin),
@@ -243,7 +247,8 @@ fn run_marketplace_thread(
 
                     match marketplace.check_updates(&installed).await {
                         Ok(updates) => {
-                            let _ = response_tx.send(MarketplaceResponse::UpdatesAvailable(updates));
+                            let _ =
+                                response_tx.send(MarketplaceResponse::UpdatesAvailable(updates));
                         }
                         Err(e) => {
                             let _ = response_tx.send(MarketplaceResponse::Error {

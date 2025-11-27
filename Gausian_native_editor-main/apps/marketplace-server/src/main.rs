@@ -1,6 +1,5 @@
 ///! Plugin Marketplace Server
 ///! REST API server for plugin catalog, ratings, and downloads
-
 mod api;
 mod models;
 mod storage;
@@ -31,15 +30,19 @@ async fn main() -> anyhow::Result<()> {
     info!("Storage initialized at: {}", storage_dir);
 
     // Seed with example plugins if empty
-    if storage.list_plugins(&models::SearchQuery {
-        q: None,
-        category: None,
-        plugin_type: None,
-        tag: None,
-        sort: None,
-        page: None,
-        limit: Some(1),
-    }).total == 0 {
+    if storage
+        .list_plugins(&models::SearchQuery {
+            q: None,
+            category: None,
+            plugin_type: None,
+            tag: None,
+            sort: None,
+            page: None,
+            limit: Some(1),
+        })
+        .total
+        == 0
+    {
         info!("Seeding database with example plugins...");
         seed_storage(&storage)?;
     }
@@ -47,9 +50,15 @@ async fn main() -> anyhow::Result<()> {
     // Build API router
     let app = Router::new()
         // Plugin endpoints
-        .route("/api/plugins", get(api::list_plugins).post(api::create_plugin))
+        .route(
+            "/api/plugins",
+            get(api::list_plugins).post(api::create_plugin),
+        )
         .route("/api/plugins/:id", get(api::get_plugin))
-        .route("/api/plugins/:id/ratings", get(api::get_ratings).post(api::create_rating))
+        .route(
+            "/api/plugins/:id/ratings",
+            get(api::get_ratings).post(api::create_rating),
+        )
         .route("/api/plugins/:id/download", post(api::record_download))
         // Stats endpoint
         .route("/api/stats", get(api::get_stats))

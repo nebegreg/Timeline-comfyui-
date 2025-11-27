@@ -1,6 +1,5 @@
 /// CRDT (Conflict-free Replicated Data Type) implementation for timeline
 /// Ensures eventual consistency across distributed collaborators
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use timeline::TimelineGraph;
@@ -70,10 +69,7 @@ impl CRDTTimeline {
     }
 
     /// Apply a remote operation (received from another user)
-    pub fn apply_remote_operation(
-        &mut self,
-        op: TimelineOperation,
-    ) -> Result<(), String> {
+    pub fn apply_remote_operation(&mut self, op: TimelineOperation) -> Result<(), String> {
         // Update our clock
         self.clock.update(op.clock);
 
@@ -225,11 +221,7 @@ impl VectorClock {
 
     /// Check if this clock is concurrent with another
     pub fn is_concurrent(&self, other: &VectorClock) -> bool {
-        let users: HashSet<_> = self
-            .clocks
-            .keys()
-            .chain(other.clocks.keys())
-            .collect();
+        let users: HashSet<_> = self.clocks.keys().chain(other.clocks.keys()).collect();
 
         let mut less = false;
         let mut greater = false;
@@ -251,11 +243,7 @@ impl VectorClock {
 
     /// Check if this clock happened before another
     pub fn happened_before(&self, other: &VectorClock) -> bool {
-        let users: HashSet<_> = self
-            .clocks
-            .keys()
-            .chain(other.clocks.keys())
-            .collect();
+        let users: HashSet<_> = self.clocks.keys().chain(other.clocks.keys()).collect();
 
         let mut any_less = false;
 
@@ -279,7 +267,9 @@ impl VectorClock {
 mod tests {
     use super::*;
     use crate::OperationKind;
-    use timeline::{Frame, FrameRange, NodeId, TimelineNode, TimelineNodeKind, TrackBinding, TrackKind};
+    use timeline::{
+        Frame, FrameRange, NodeId, TimelineNode, TimelineNodeKind, TrackBinding, TrackKind,
+    };
 
     fn create_test_clip(start: Frame, duration: Frame) -> TimelineNode {
         use timeline::ClipNode;

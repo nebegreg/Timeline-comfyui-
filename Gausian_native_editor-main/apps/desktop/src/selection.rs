@@ -1,6 +1,5 @@
 /// Multi-clip selection system for timeline
 /// Phase 1: Timeline Polish & UX Improvements
-
 use std::collections::HashSet;
 use timeline::{NodeId, TrackId};
 

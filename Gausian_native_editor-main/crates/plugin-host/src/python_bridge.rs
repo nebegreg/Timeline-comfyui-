@@ -2,10 +2,10 @@ use crate::{PluginContext, PluginError, PluginManifest, PluginResult};
 use anyhow::Result;
 use serde_json;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::{Child, Command as TokioCommand};
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command as TokioCommand;
 use tokio::sync::mpsc;
 use tokio::time::timeout;
 use tracing::{debug, error, warn};
@@ -308,7 +308,7 @@ except ImportError:
 
 /// Helper functions for Python plugin development
 pub mod python_helpers {
-    use super::*;
+    
 
     /// Generate a basic Python plugin template
     pub fn generate_python_plugin_template(plugin_name: &str, plugin_type: &str) -> String {

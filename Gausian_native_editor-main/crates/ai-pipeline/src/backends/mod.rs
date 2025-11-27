@@ -5,14 +5,13 @@
 /// - ComfyUI (cloud/local)
 /// - Replicate API
 /// - Local Candle runtime (experimental)
-
 pub mod comfyui;
 pub mod replicate;
 
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
 pub use comfyui::ComfyUIBackend;
 pub use replicate::ReplicateBackend;
@@ -189,15 +188,13 @@ impl BackendFactory {
 
     /// Create default ComfyUI backend
     pub async fn comfyui(api_url: String, output_dir: PathBuf) -> Result<ComfyUIBackend> {
-        let config = BackendConfig::new(BackendType::ComfyUI, output_dir)
-            .with_api_url(api_url);
+        let config = BackendConfig::new(BackendType::ComfyUI, output_dir).with_api_url(api_url);
         ComfyUIBackend::new(config)
     }
 
     /// Create default Replicate backend
     pub async fn replicate(api_key: String, output_dir: PathBuf) -> Result<ReplicateBackend> {
-        let config = BackendConfig::new(BackendType::Replicate, output_dir)
-            .with_api_key(api_key);
+        let config = BackendConfig::new(BackendType::Replicate, output_dir).with_api_key(api_key);
         ReplicateBackend::new(config)
     }
 }
@@ -208,12 +205,9 @@ mod tests {
 
     #[test]
     fn test_backend_config() {
-        let config = BackendConfig::new(
-            BackendType::ComfyUI,
-            PathBuf::from("/tmp/lora"),
-        )
-        .with_api_url("http://localhost:8188".to_string())
-        .with_max_jobs(5);
+        let config = BackendConfig::new(BackendType::ComfyUI, PathBuf::from("/tmp/lora"))
+            .with_api_url("http://localhost:8188".to_string())
+            .with_max_jobs(5);
 
         assert_eq!(config.backend_type, BackendType::ComfyUI);
         assert_eq!(config.api_url, Some("http://localhost:8188".to_string()));

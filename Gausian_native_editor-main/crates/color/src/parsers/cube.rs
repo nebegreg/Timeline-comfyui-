@@ -1,6 +1,5 @@
 /// Adobe .cube LUT parser
 /// Phase 3: Advanced Color Management & LUTs
-
 use crate::lut3d::{Lut3D, LutFormat};
 use anyhow::{Context, Result};
 

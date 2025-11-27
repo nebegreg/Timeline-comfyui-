@@ -1,6 +1,5 @@
 /// Chroma Key effect (green screen keying)
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -135,7 +134,8 @@ impl Effect for ChromaKeyEffect {
                 default: 0.0,
                 min: 0.0,
                 max: 1.0,
-                description: "Red component of key color (0-1, default=0 for green screen)".to_string(),
+                description: "Red component of key color (0-1, default=0 for green screen)"
+                    .to_string(),
             },
             EffectParameter {
                 name: "key_color_g".to_string(),
@@ -144,7 +144,8 @@ impl Effect for ChromaKeyEffect {
                 default: 1.0,
                 min: 0.0,
                 max: 1.0,
-                description: "Green component of key color (0-1, default=1 for green screen)".to_string(),
+                description: "Green component of key color (0-1, default=1 for green screen)"
+                    .to_string(),
             },
             EffectParameter {
                 name: "key_color_b".to_string(),
@@ -153,7 +154,8 @@ impl Effect for ChromaKeyEffect {
                 default: 0.0,
                 min: 0.0,
                 max: 1.0,
-                description: "Blue component of key color (0-1, default=0 for green screen)".to_string(),
+                description: "Blue component of key color (0-1, default=0 for green screen)"
+                    .to_string(),
             },
             EffectParameter {
                 name: "tolerance".to_string(),
@@ -193,7 +195,7 @@ impl Effect for ChromaKeyEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();
@@ -210,8 +212,14 @@ impl Effect for ChromaKeyEffect {
 
         // Pack uniforms: key_color (RGB), tolerance, edge_feather, spill_suppression + padding
         let uniform_data = [
-            key_r, key_g, key_b, 0.0,                    // key_color + padding
-            tolerance, edge_feather, spill_suppression, 0.0,  // params + padding
+            key_r,
+            key_g,
+            key_b,
+            0.0, // key_color + padding
+            tolerance,
+            edge_feather,
+            spill_suppression,
+            0.0, // params + padding
         ];
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

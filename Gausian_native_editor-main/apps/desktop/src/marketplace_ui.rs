@@ -1,11 +1,10 @@
 /// Phase 5: Plugin Marketplace UI
 /// Browse, search, install, and manage plugins from the marketplace
-
 use egui::{Color32, Context, Response, RichText, ScrollArea, TextureHandle, Ui, Vec2, Window};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 
 use crate::marketplace_manager::{MarketplaceCommand, SearchQuery};
 
@@ -186,10 +185,26 @@ impl MarketplaceUI {
                 .selected_text(self.selected_category.as_deref().unwrap_or("All"))
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.selected_category, None, "All");
-                    ui.selectable_value(&mut self.selected_category, Some("effect".to_string()), "Effects");
-                    ui.selectable_value(&mut self.selected_category, Some("transition".to_string()), "Transitions");
-                    ui.selectable_value(&mut self.selected_category, Some("audio".to_string()), "Audio");
-                    ui.selectable_value(&mut self.selected_category, Some("utility".to_string()), "Utilities");
+                    ui.selectable_value(
+                        &mut self.selected_category,
+                        Some("effect".to_string()),
+                        "Effects",
+                    );
+                    ui.selectable_value(
+                        &mut self.selected_category,
+                        Some("transition".to_string()),
+                        "Transitions",
+                    );
+                    ui.selectable_value(
+                        &mut self.selected_category,
+                        Some("audio".to_string()),
+                        "Audio",
+                    );
+                    ui.selectable_value(
+                        &mut self.selected_category,
+                        Some("utility".to_string()),
+                        "Utilities",
+                    );
                 });
 
             // Type filter
@@ -199,7 +214,11 @@ impl MarketplaceUI {
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.selected_type, None, "All");
                     ui.selectable_value(&mut self.selected_type, Some("wasm".to_string()), "WASM");
-                    ui.selectable_value(&mut self.selected_type, Some("python".to_string()), "Python");
+                    ui.selectable_value(
+                        &mut self.selected_type,
+                        Some("python".to_string()),
+                        "Python",
+                    );
                 });
 
             // Sort
@@ -224,7 +243,10 @@ impl MarketplaceUI {
             // Pagination
             ui.separator();
             ui.horizontal(|ui| {
-                ui.label(format!("Page {} of {} ({} plugins)", results.page, results.pages, results.total));
+                ui.label(format!(
+                    "Page {} of {} ({} plugins)",
+                    results.page, results.pages, results.total
+                ));
 
                 ui.add_space(20.0);
 
@@ -297,8 +319,16 @@ impl MarketplaceUI {
 
                 // Category and type badges
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(&plugin.category).small().background_color(Color32::from_gray(60)));
-                    ui.label(RichText::new(&plugin.plugin_type).small().background_color(Color32::from_gray(80)));
+                    ui.label(
+                        RichText::new(&plugin.category)
+                            .small()
+                            .background_color(Color32::from_gray(60)),
+                    );
+                    ui.label(
+                        RichText::new(&plugin.plugin_type)
+                            .small()
+                            .background_color(Color32::from_gray(80)),
+                    );
                 });
 
                 ui.add_space(5.0);
@@ -312,7 +342,10 @@ impl MarketplaceUI {
                 ui.horizontal(|ui| {
                     // Rating
                     ui.label("⭐");
-                    ui.label(format!("{:.1} ({} reviews)", plugin.rating, plugin.rating_count));
+                    ui.label(format!(
+                        "{:.1} ({} reviews)",
+                        plugin.rating, plugin.rating_count
+                    ));
 
                     ui.add_space(10.0);
 
@@ -325,7 +358,11 @@ impl MarketplaceUI {
 
                 // Author and version
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new(format!("by {}", plugin.author)).small().italics());
+                    ui.label(
+                        RichText::new(format!("by {}", plugin.author))
+                            .small()
+                            .italics(),
+                    );
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(RichText::new(format!("v{}", plugin.version)).small());
                     });
@@ -390,12 +427,14 @@ impl MarketplaceUI {
                 }
                 Err(e) => {
                     tracing::error!("Failed to send marketplace command: {}", e);
-                    self.connection_status = ConnectionStatus::Error(format!("Failed to send command: {}", e));
+                    self.connection_status =
+                        ConnectionStatus::Error(format!("Failed to send command: {}", e));
                 }
             }
         } else {
             tracing::warn!("Marketplace command sender not initialized");
-            self.connection_status = ConnectionStatus::Error("Marketplace not initialized".to_string());
+            self.connection_status =
+                ConnectionStatus::Error("Marketplace not initialized".to_string());
         }
     }
 
@@ -419,13 +458,15 @@ impl MarketplaceUI {
                 Err(e) => {
                     tracing::error!("Failed to send install command: {}", e);
                     self.installing = None;
-                    self.connection_status = ConnectionStatus::Error(format!("Failed to install: {}", e));
+                    self.connection_status =
+                        ConnectionStatus::Error(format!("Failed to install: {}", e));
                 }
             }
         } else {
             tracing::warn!("Marketplace command sender not initialized");
             self.installing = None;
-            self.connection_status = ConnectionStatus::Error("Marketplace not initialized".to_string());
+            self.connection_status =
+                ConnectionStatus::Error("Marketplace not initialized".to_string());
         }
     }
 

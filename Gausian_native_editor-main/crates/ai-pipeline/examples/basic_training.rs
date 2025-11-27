@@ -2,8 +2,7 @@
 ///
 /// Run with:
 /// cargo run --example basic_training --package ai-pipeline
-
-use ai_pipeline::{LoraCreator, LoraConfig};
+use ai_pipeline::{LoraConfig, LoraCreator};
 use anyhow::Result;
 use std::path::PathBuf;
 
@@ -28,7 +27,10 @@ async fn main() -> Result<()> {
     println!("  Rank: {:?}", creator.config.rank);
     println!("  Alpha: {}", creator.config.alpha);
     println!("  Learning Rate: {}", creator.config.learning_rate);
-    println!("  Resolution: {}x{}", creator.config.resolution.0, creator.config.resolution.1);
+    println!(
+        "  Resolution: {}x{}",
+        creator.config.resolution.0, creator.config.resolution.1
+    );
     println!("  Epochs: {}", creator.config.epochs);
     println!("  Batch Size: {}", creator.config.batch_size);
     println!("  Mixed Precision: {:?}\n", creator.config.mixed_precision);

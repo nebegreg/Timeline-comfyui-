@@ -1,6 +1,5 @@
 /// LoRA training configuration
 /// Phase 4: Automatic LORA Creator
-
 use serde::{Deserialize, Serialize};
 
 /// LoRA rank (dimensionality)

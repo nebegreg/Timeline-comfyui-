@@ -1,13 +1,12 @@
 /// WebSocket-based synchronization protocol for real-time collaboration
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tokio::sync::{mpsc, RwLock};
 use std::sync::Arc;
+use tokio::sync::{mpsc, RwLock};
 
 use crate::{
-    CollaborationError, PresenceUpdate, Result, SessionId, TimelineOperation, UserId,
-    VectorClock, User,
+    CollaborationError, PresenceUpdate, Result, SessionId, TimelineOperation, User, UserId,
+    VectorClock,
 };
 
 /// Message types exchanged between client and server
@@ -248,11 +247,7 @@ impl SessionManager {
     }
 
     /// Send pong to a user
-    pub async fn send_pong(
-        &self,
-        session_id: SessionId,
-        user_id: UserId,
-    ) -> Result<()> {
+    pub async fn send_pong(&self, session_id: SessionId, user_id: UserId) -> Result<()> {
         let sessions = self.sessions.read().await;
 
         let session = sessions
@@ -373,12 +368,9 @@ impl Session {
     }
 
     /// Send sync response to a specific user
-    fn send_sync_response(
-        &self,
-        user_id: UserId,
-        _since: &VectorClock,
-    ) -> Result<()> {
-        let user_tx = self.users
+    fn send_sync_response(&self, user_id: UserId, _since: &VectorClock) -> Result<()> {
+        let user_tx = self
+            .users
             .get(&user_id)
             .ok_or_else(|| CollaborationError::SyncError("User not found".to_string()))?;
 
@@ -391,7 +383,8 @@ impl Session {
             vector_clock: self._vector_clock.clone(),
         };
 
-        user_tx.send(response)
+        user_tx
+            .send(response)
             .map_err(|e| CollaborationError::NetworkError(e.to_string()))?;
 
         Ok(())
@@ -399,11 +392,13 @@ impl Session {
 
     /// Send pong to a specific user
     fn send_pong(&self, user_id: UserId) -> Result<()> {
-        let user_tx = self.users
+        let user_tx = self
+            .users
             .get(&user_id)
             .ok_or_else(|| CollaborationError::SyncError("User not found".to_string()))?;
 
-        user_tx.send(SyncMessage::Pong)
+        user_tx
+            .send(SyncMessage::Pong)
             .map_err(|e| CollaborationError::NetworkError(e.to_string()))?;
 
         Ok(())
@@ -461,9 +456,7 @@ impl CollaborationServer {
 
             SyncMessage::Ping => {
                 // Respond with pong
-                self.session_manager
-                    .send_pong(session_id, user_id)
-                    .await?;
+                self.session_manager.send_pong(session_id, user_id).await?;
             }
 
             _ => {}
@@ -488,7 +481,9 @@ impl CollaborationServer {
 
     /// User leaves a session
     pub async fn leave_session(&self, session_id: SessionId, user_id: UserId) -> Result<()> {
-        self.session_manager.leave_session(session_id, user_id).await
+        self.session_manager
+            .leave_session(session_id, user_id)
+            .await
     }
 }
 
@@ -556,8 +551,14 @@ mod tests {
             avatar_url: None,
         };
 
-        let mut _rx1 = manager.join_session(session_id, user1.clone()).await.unwrap();
-        let mut rx2 = manager.join_session(session_id, user2.clone()).await.unwrap();
+        let mut _rx1 = manager
+            .join_session(session_id, user1.clone())
+            .await
+            .unwrap();
+        let mut rx2 = manager
+            .join_session(session_id, user2.clone())
+            .await
+            .unwrap();
 
         // Skip the initial Connected message
         let msg = rx2.recv().await;
@@ -585,11 +586,8 @@ mod tests {
             metadata: serde_json::Value::Null,
         };
 
-        let operation = TimelineOperation::new(
-            user1.id,
-            LamportClock(1),
-            OperationKind::AddNode { node },
-        );
+        let operation =
+            TimelineOperation::new(user1.id, LamportClock(1), OperationKind::AddNode { node });
 
         // Broadcast operation
         manager

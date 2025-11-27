@@ -1,18 +1,17 @@
 /// Color management and LUT system
 /// Phase 3: Advanced Color Management & LUTs
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use wgpu;
 
-pub mod lut3d;
 pub mod color_spaces;
+pub mod lut3d;
 pub mod parsers;
 pub mod scopes;
 
-pub use lut3d::Lut3D;
 pub use color_spaces::*;
+pub use lut3d::Lut3D;
 pub use scopes::{ScopeAnalyzer, ScopeData, ScopeType};
 
 /// Color space identifier

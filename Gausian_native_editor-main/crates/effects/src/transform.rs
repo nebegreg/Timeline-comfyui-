@@ -1,12 +1,11 @@
 /// Transform effect (position, scale, rotation)
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
+use glam::{Mat3, Vec2};
 use std::collections::HashMap;
 use wgpu;
 use wgpu::util::DeviceExt;
-use glam::{Mat3, Vec2};
 
 pub struct TransformEffect {
     pipeline: Option<wgpu::RenderPipeline>,
@@ -111,11 +110,7 @@ impl TransformEffect {
         self.uniform_bind_group_layout = Some(uniform_bind_group_layout);
     }
 
-    fn build_transform_matrix(
-        position: Vec2,
-        scale: f32,
-        rotation_degrees: f32,
-    ) -> Mat3 {
+    fn build_transform_matrix(position: Vec2, scale: f32, rotation_degrees: f32) -> Mat3 {
         // Build 2D transformation matrix: Translation × Rotation × Scale
         let rotation_radians = rotation_degrees.to_radians();
         let cos_r = rotation_radians.cos();
@@ -194,7 +189,7 @@ impl Effect for TransformEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();
@@ -217,9 +212,18 @@ impl Effect for TransformEffect {
         // Convert Mat3 to array for uniform buffer (column-major, 3x3 + padding)
         let matrix_data = transform_matrix.to_cols_array();
         let uniform_data = [
-            matrix_data[0], matrix_data[1], matrix_data[2], 0.0,  // Column 1 + padding
-            matrix_data[3], matrix_data[4], matrix_data[5], 0.0,  // Column 2 + padding
-            matrix_data[6], matrix_data[7], matrix_data[8], 0.0,  // Column 3 + padding
+            matrix_data[0],
+            matrix_data[1],
+            matrix_data[2],
+            0.0, // Column 1 + padding
+            matrix_data[3],
+            matrix_data[4],
+            matrix_data[5],
+            0.0, // Column 2 + padding
+            matrix_data[6],
+            matrix_data[7],
+            matrix_data[8],
+            0.0, // Column 3 + padding
         ];
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

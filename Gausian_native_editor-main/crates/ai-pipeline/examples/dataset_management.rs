@@ -1,12 +1,11 @@
+use ai_pipeline::dataset::preprocess;
 /// Dataset management example
 ///
 /// Demonstrates dataset creation, preprocessing, and statistics
 ///
 /// Run with:
 /// cargo run --example dataset_management --package ai-pipeline
-
 use ai_pipeline::dataset::{Dataset, DatasetBuilder};
-use ai_pipeline::dataset::preprocess;
 use anyhow::Result;
 use std::path::PathBuf;
 
@@ -99,8 +98,14 @@ fn analyze_dataset() -> Result<()> {
     println!("   Dataset Statistics:");
     println!("   - Total images: {}", stats.total_images);
     println!("   - Images with captions: {}", stats.images_with_captions);
-    println!("   - Images without captions: {}", stats.total_images - stats.images_with_captions);
-    println!("   - Average caption length: {:.1} chars", stats.avg_caption_length);
+    println!(
+        "   - Images without captions: {}",
+        stats.total_images - stats.images_with_captions
+    );
+    println!(
+        "   - Average caption length: {:.1} chars",
+        stats.avg_caption_length
+    );
 
     // Data quality assessment
     let caption_coverage = (stats.images_with_captions as f32 / stats.total_images as f32) * 100.0;

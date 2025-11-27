@@ -52,7 +52,11 @@ impl SignatureVerifier {
     }
 
     /// Verify plugin signature
-    pub async fn verify_plugin(&self, plugin_dir: &Path, signature: &PluginSignature) -> Result<bool> {
+    pub async fn verify_plugin(
+        &self,
+        plugin_dir: &Path,
+        signature: &PluginSignature,
+    ) -> Result<bool> {
         // Check if public key is trusted
         if !self.is_key_trusted(&signature.public_key) {
             tracing::warn!("Plugin signed with untrusted key: {}", signature.signer);
@@ -80,7 +84,12 @@ impl SignatureVerifier {
     }
 
     /// Verify Ed25519 signature (using ring or ed25519-dalek would go here)
-    fn verify_ed25519_signature(&self, signature: &[u8], public_key: &[u8], _message: &[u8]) -> Result<bool> {
+    fn verify_ed25519_signature(
+        &self,
+        signature: &[u8],
+        public_key: &[u8],
+        _message: &[u8],
+    ) -> Result<bool> {
         // NOTE: This is a placeholder. In production, you would use:
         // - ed25519-dalek crate for verification
         // - ring crate for cryptographic operations
@@ -156,7 +165,7 @@ impl SignatureVerifier {
 
 /// Signature generator for plugin developers
 pub struct SignatureGenerator {
-    private_key: Vec<u8>,
+    _private_key: Vec<u8>,
     public_key: Vec<u8>,
 }
 
@@ -172,7 +181,7 @@ impl SignatureGenerator {
         }
 
         Ok(Self {
-            private_key,
+            _private_key: private_key,
             public_key,
         })
     }
@@ -197,7 +206,11 @@ impl SignatureGenerator {
     }
 
     /// Sign a plugin directory
-    pub async fn sign_plugin(&self, plugin_dir: &Path, signer_name: &str) -> Result<PluginSignature> {
+    pub async fn sign_plugin(
+        &self,
+        plugin_dir: &Path,
+        signer_name: &str,
+    ) -> Result<PluginSignature> {
         // Calculate plugin hash
         let verifier = SignatureVerifier::new();
         let plugin_hash = verifier.calculate_plugin_hash(plugin_dir).await?;
@@ -272,13 +285,19 @@ mod tests {
 
         // Sign the plugin
         let generator = SignatureGenerator::new(private_key, public_key.clone()).unwrap();
-        let signature = generator.sign_plugin(&plugin_dir, "test_author").await.unwrap();
+        let signature = generator
+            .sign_plugin(&plugin_dir, "test_author")
+            .await
+            .unwrap();
 
         // Verify signature
         let mut verifier = SignatureVerifier::new();
         verifier.add_trusted_key(public_key);
 
-        let is_valid = verifier.verify_plugin(&plugin_dir, &signature).await.unwrap();
+        let is_valid = verifier
+            .verify_plugin(&plugin_dir, &signature)
+            .await
+            .unwrap();
         assert!(is_valid);
     }
 
@@ -296,11 +315,17 @@ mod tests {
 
         // Sign with one key
         let generator = SignatureGenerator::new(private_key, public_key).unwrap();
-        let signature = generator.sign_plugin(&plugin_dir, "test_author").await.unwrap();
+        let signature = generator
+            .sign_plugin(&plugin_dir, "test_author")
+            .await
+            .unwrap();
 
         // Verify with different trusted keys (should fail)
         let verifier = SignatureVerifier::new(); // Default keys only
-        let is_valid = verifier.verify_plugin(&plugin_dir, &signature).await.unwrap();
+        let is_valid = verifier
+            .verify_plugin(&plugin_dir, &signature)
+            .await
+            .unwrap();
         assert!(!is_valid); // Should be false because key is not trusted
     }
 
@@ -315,14 +340,21 @@ mod tests {
         // Create plugin dir
         let plugin_dir = temp_dir.path().join("plugin");
         fs::create_dir(&plugin_dir).await.unwrap();
-        fs::write(plugin_dir.join("test.wasm"), b"content").await.unwrap();
+        fs::write(plugin_dir.join("test.wasm"), b"content")
+            .await
+            .unwrap();
 
         // Generate and save signature
         let signature = generator.sign_plugin(&plugin_dir, "author").await.unwrap();
-        generator.save_signature(&signature, &signature_path).await.unwrap();
+        generator
+            .save_signature(&signature, &signature_path)
+            .await
+            .unwrap();
 
         // Load signature
-        let loaded_signature = SignatureGenerator::load_signature(&signature_path).await.unwrap();
+        let loaded_signature = SignatureGenerator::load_signature(&signature_path)
+            .await
+            .unwrap();
 
         assert_eq!(signature.algorithm, loaded_signature.algorithm);
         assert_eq!(signature.signer, loaded_signature.signer);

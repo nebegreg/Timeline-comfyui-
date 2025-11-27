@@ -1,6 +1,5 @@
 /// Slide transition
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Transition, TransitionCategory};
 use anyhow::Result;
 use wgpu;

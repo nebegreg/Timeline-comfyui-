@@ -1,6 +1,5 @@
 /// GPU-accelerated effects system for video editing
 /// Phase 2: Rich Effects & Transitions
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -68,10 +67,10 @@ pub struct EffectParameter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ParameterType {
     Slider,
-    Angle,       // 0-360 degrees
-    Percentage,  // 0-100
-    Color,       // RGB color
-    Boolean,     // 0 or 1
+    Angle,      // 0-360 degrees
+    Percentage, // 0-100
+    Color,      // RGB color
+    Boolean,    // 0 or 1
 }
 
 /// Effect instance applied to a clip
@@ -147,41 +146,41 @@ impl Default for EffectManager {
 }
 
 // Modules for specific effects
-pub mod brightness_contrast;
 pub mod blur;
-pub mod transform;
-pub mod saturation_hue;
-pub mod vignette;
+pub mod brightness_contrast;
 pub mod chroma_key;
-pub mod exposure_gamma;
-pub mod sharpen;
-pub mod film_grain;
 pub mod chromatic_aberration;
-pub mod lut_effect;
 pub mod crop;
+pub mod exposure_gamma;
+pub mod film_grain;
+pub mod lut_effect;
+pub mod saturation_hue;
+pub mod sharpen;
+pub mod transform;
+pub mod vignette;
 
 // Phase 2 - New advanced effects
-pub mod curves;
+pub mod blend_modes;
 pub mod color_wheels;
 pub mod corner_pin;
-pub mod blend_modes;
+pub mod curves;
 
 // Re-exports
-pub use brightness_contrast::BrightnessContrastEffect;
 pub use blur::GaussianBlurEffect;
-pub use transform::TransformEffect;
-pub use saturation_hue::SaturationHueEffect;
-pub use vignette::VignetteEffect;
+pub use brightness_contrast::BrightnessContrastEffect;
 pub use chroma_key::ChromaKeyEffect;
-pub use exposure_gamma::ExposureGammaEffect;
-pub use sharpen::SharpenEffect;
-pub use film_grain::FilmGrainEffect;
 pub use chromatic_aberration::ChromaticAberrationEffect;
-pub use lut_effect::LutEffect;
 pub use crop::CropEffect;
+pub use exposure_gamma::ExposureGammaEffect;
+pub use film_grain::FilmGrainEffect;
+pub use lut_effect::LutEffect;
+pub use saturation_hue::SaturationHueEffect;
+pub use sharpen::SharpenEffect;
+pub use transform::TransformEffect;
+pub use vignette::VignetteEffect;
 
 // Phase 2 - New advanced effects
-pub use curves::CurvesEffect;
+pub use blend_modes::BlendModesEffect;
 pub use color_wheels::ColorWheelsEffect;
 pub use corner_pin::CornerPinEffect;
-pub use blend_modes::BlendModesEffect;
+pub use curves::CurvesEffect;

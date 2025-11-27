@@ -1,6 +1,5 @@
 /// Crop/Padding effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -184,7 +183,7 @@ impl Effect for CropEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();
@@ -198,10 +197,7 @@ impl Effect for CropEffect {
         let feather = self.get_param(params, "feather");
 
         // Pack crop rectangle + feather
-        let uniform_data = [
-            left, right, top, bottom,
-            feather, 0.0, 0.0, 0.0,
-        ];
+        let uniform_data = [left, right, top, bottom, feather, 0.0, 0.0, 0.0];
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Crop Uniforms"),
             contents: bytemuck::cast_slice(&uniform_data),

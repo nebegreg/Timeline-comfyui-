@@ -2,22 +2,21 @@
 /// Phase 4: Automatic LORA Creator
 ///
 /// Provides frame extraction, captioning, and LoRA training integration
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+pub mod backends;
 pub mod captioning;
 pub mod dataset;
 pub mod lora_config;
 pub mod training;
-pub mod backends;
 
-pub use captioning::{CaptionProvider, Caption};
+pub use backends::{BackendConfig, BackendFactory, BackendType, TrainingBackend};
+pub use captioning::{Caption, CaptionProvider};
 pub use dataset::{Dataset, DatasetBuilder, TrainingImage};
 pub use lora_config::{LoraConfig, LoraRank};
 pub use training::{JobId, JobStatus, TrainingJob, TrainingProgress};
-pub use backends::{BackendConfig, BackendType, TrainingBackend, BackendFactory};
 
 /// Main LoRA creator interface
 pub struct LoraCreator {
@@ -107,11 +106,7 @@ impl LoraCreator {
 
         // Preprocess images
         let preprocess_dir = self.output_dir.join("preprocessed");
-        dataset::preprocess::preprocess_dataset(
-            dataset,
-            self.config.resolution,
-            &preprocess_dir,
-        )?;
+        dataset::preprocess::preprocess_dataset(dataset, self.config.resolution, &preprocess_dir)?;
 
         Ok(())
     }
@@ -136,12 +131,7 @@ impl LoraCreator {
 
         // Submit job to backend
         let job_id = backend
-            .submit_job(
-                &self.base_model,
-                dataset,
-                &self.config,
-                &self.output_dir,
-            )
+            .submit_job(&self.base_model, dataset, &self.config, &self.output_dir)
             .await?;
 
         job.id = job_id;
@@ -162,9 +152,7 @@ impl LoraCreator {
     /// Download trained weights
     pub async fn download_weights(&self, job_id: &JobId) -> Result<PathBuf> {
         if let Some(backend) = &self.backend {
-            backend
-                .download_weights(job_id, &self.output_dir)
-                .await
+            backend.download_weights(job_id, &self.output_dir).await
         } else {
             anyhow::bail!("No backend configured")
         }
@@ -270,8 +258,12 @@ mod tests {
         let creator = LoraCreator::new(
             "stabilityai/stable-diffusion-xl-base-1.0".to_string(),
             PathBuf::from("/tmp/test_lora"),
-        ).unwrap();
-        assert_eq!(creator.base_model, "stabilityai/stable-diffusion-xl-base-1.0");
+        )
+        .unwrap();
+        assert_eq!(
+            creator.base_model,
+            "stabilityai/stable-diffusion-xl-base-1.0"
+        );
         assert!(creator.dataset.is_none());
         assert!(creator.backend.is_none());
     }
@@ -281,7 +273,8 @@ mod tests {
         let creator = LoraCreator::new(
             "stabilityai/stable-diffusion-xl-base-1.0".to_string(),
             PathBuf::from("/tmp/test_lora"),
-        ).unwrap()
+        )
+        .unwrap()
         .with_config(LoraConfig::sdxl_preset());
 
         assert_eq!(creator.config.rank, LoraRank::Rank32);

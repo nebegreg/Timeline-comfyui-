@@ -1,6 +1,5 @@
 /// Brightness/Contrast effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -30,7 +29,9 @@ impl BrightnessContrastEffect {
         // Shader module
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Brightness/Contrast Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/brightness_contrast.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(
+                include_str!("shaders/brightness_contrast.wgsl").into(),
+            ),
         });
 
         // Bind group layout for texture + sampler
@@ -168,7 +169,7 @@ impl Effect for BrightnessContrastEffect {
         queue: &wgpu::Queue,
     ) -> Result<()> {
         // Ensure pipeline is initialized
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();

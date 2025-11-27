@@ -1,10 +1,10 @@
 /// Timeline collaborative operations
 /// These operations represent changes that can be synchronized across users
-
 use serde::{Deserialize, Serialize};
 use timeline::{
-    AutomationInterpolation, AutomationKeyframe, Frame, FrameRange, LaneId, Marker, MarkerId, NodeId,
-    TimelineGraph, TimelineNode, TrackBinding, TrackId, AutomationLane, AutomationTarget,
+    AutomationInterpolation, AutomationKeyframe, AutomationLane, AutomationTarget, Frame,
+    FrameRange, LaneId, Marker, MarkerId, NodeId, TimelineGraph, TimelineNode, TrackBinding,
+    TrackId,
 };
 
 use crate::{LamportClock, UserId};
@@ -231,10 +231,7 @@ impl OperationKind {
                 Ok(())
             }
 
-            OperationKind::RenameTrack {
-                track_id,
-                new_name,
-            } => {
+            OperationKind::RenameTrack { track_id, new_name } => {
                 if let Some(track) = graph.tracks.iter_mut().find(|t| t.id == *track_id) {
                     track.name = new_name.clone();
                 }
@@ -403,20 +400,8 @@ impl OperationKind {
             // Marker conflicts
             (AddMarker { marker: m1 }, AddMarker { marker: m2 }) => m1.id == m2.id,
             (RemoveMarker { marker_id: m1 }, RemoveMarker { marker_id: m2 }) => m1 == m2,
-            (
-                RemoveMarker { marker_id: m1 },
-                UpdateMarker {
-                    marker_id: m2, ..
-                },
-            ) => m1 == m2,
-            (
-                UpdateMarker {
-                    marker_id: m1, ..
-                },
-                UpdateMarker {
-                    marker_id: m2, ..
-                },
-            ) => m1 == m2,
+            (RemoveMarker { marker_id: m1 }, UpdateMarker { marker_id: m2, .. }) => m1 == m2,
+            (UpdateMarker { marker_id: m1, .. }, UpdateMarker { marker_id: m2, .. }) => m1 == m2,
 
             // Automation conflicts
             (
@@ -469,8 +454,7 @@ impl OperationLog {
     pub fn add_operation(&mut self, op: TimelineOperation) {
         let id = op.id;
         self.operations.push(op);
-        self.operation_index
-            .insert(id, self.operations.len() - 1);
+        self.operation_index.insert(id, self.operations.len() - 1);
     }
 
     /// Get operation by ID

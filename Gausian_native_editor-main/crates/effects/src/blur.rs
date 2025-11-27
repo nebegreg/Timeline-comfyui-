@@ -1,6 +1,5 @@
 /// Gaussian Blur effect
 /// Phase 2: Rich Effects & Transitions
-
 use crate::{Effect, EffectCategory, EffectParameter, ParameterType};
 use anyhow::Result;
 use std::collections::HashMap;
@@ -147,7 +146,7 @@ impl Effect for GaussianBlurEffect {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> Result<()> {
-        let mut self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
+        let self_mut = unsafe { &mut *(self as *const Self as *mut Self) };
         self_mut.ensure_pipeline(device);
 
         let pipeline = self.pipeline.as_ref().unwrap();
@@ -179,7 +178,7 @@ impl Effect for GaussianBlurEffect {
 
         // Pass 1: Horizontal blur (input → temp)
         {
-            let uniform_data = [radius, 1.0, 0.0, 0.0];  // direction = (1, 0) for horizontal
+            let uniform_data = [radius, 1.0, 0.0, 0.0]; // direction = (1, 0) for horizontal
             let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Blur Horizontal Uniforms"),
                 contents: bytemuck::cast_slice(&uniform_data),
@@ -244,7 +243,7 @@ impl Effect for GaussianBlurEffect {
 
         // Pass 2: Vertical blur (temp → output)
         {
-            let uniform_data = [radius, 0.0, 1.0, 0.0];  // direction = (0, 1) for vertical
+            let uniform_data = [radius, 0.0, 1.0, 0.0]; // direction = (0, 1) for vertical
             let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Blur Vertical Uniforms"),
                 contents: bytemuck::cast_slice(&uniform_data),
