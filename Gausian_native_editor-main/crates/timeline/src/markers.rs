@@ -53,7 +53,7 @@ impl Default for MarkerType {
 }
 
 /// Timeline marker
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Marker {
     pub id: MarkerId,
     pub frame: Frame,

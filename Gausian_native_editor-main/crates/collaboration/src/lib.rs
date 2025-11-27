@@ -19,6 +19,9 @@ pub use crdt::*;
 mod conflict;
 pub use conflict::*;
 
+mod offline;
+pub use offline::*;
+
 #[derive(Debug, Error)]
 pub enum CollaborationError {
     #[error("sync error: {0}")]

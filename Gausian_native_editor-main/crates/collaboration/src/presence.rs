@@ -16,6 +16,17 @@ pub struct User {
     pub avatar_url: Option<String>,
 }
 
+impl User {
+    pub fn new(id: UserId, name: String) -> Self {
+        Self {
+            id,
+            name,
+            color: UserColor::from_user_id(id),
+            avatar_url: None,
+        }
+    }
+}
+
 /// Color assigned to a user for cursor/selection highlighting
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct UserColor {

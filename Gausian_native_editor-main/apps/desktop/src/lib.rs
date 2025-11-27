@@ -15,3 +15,6 @@ pub mod marker_ui;
 // Phase 8: Animation & Keyframing - UI modules
 pub mod automation_ui;
 pub mod graph_editor;
+
+// Phase 7: Collaborative Editing - UI modules
+pub mod collab_ui;
