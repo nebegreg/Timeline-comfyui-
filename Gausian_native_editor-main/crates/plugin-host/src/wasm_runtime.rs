@@ -124,12 +124,36 @@ impl WasmRuntime {
             }
         })?;
 
-        let state = store.data();
         let success = result_code == 0;
+
+        // Extract output items from WASM memory if the plugin exports an output function
+        let output_items = if let Ok(get_output_func) = instance
+            .get_typed_func::<(), i32>(&mut store, "plugin_get_output_count")
+        {
+            let output_count = get_output_func.call(&mut store, ()).unwrap_or(0);
+            if output_count > 0 {
+                // In a full implementation, we would:
+                // 1. Call plugin_get_output_item(index) for each item
+                // 2. Parse the returned JSON from WASM memory
+                // 3. Deserialize into Item objects
+                // For now, return empty vec as plugins need to implement the output protocol
+                tracing::debug!(
+                    "Plugin reported {} output items (extraction not yet implemented)",
+                    output_count
+                );
+            }
+            vec![]
+        } else {
+            // Plugin doesn't export output functions, that's fine
+            vec![]
+        };
+
+        // Get state data after all mutable operations
+        let state = store.data();
 
         Ok(PluginResult {
             success,
-            output_items: vec![], // TODO: Extract from WASM memory if needed
+            output_items,
             modified_sequence: None,
             artifacts: vec![],
             logs: state.logs.clone(),

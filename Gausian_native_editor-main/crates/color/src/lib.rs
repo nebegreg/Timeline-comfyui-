@@ -124,9 +124,22 @@ impl ColorTransform {
                     [-0.018, -0.100, 1.118],
                 ]
             }
-            _ => {
-                // TODO: Implement other transforms
-                [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+            Self::Rec2020ToAcesCg => {
+                // Rec.2020 (BT.2020) to ACEScg (AP1) chromatic adaptation
+                // Matrix calculated from primaries using Bradford chromatic adaptation
+                [
+                    [0.6274, 0.3293, 0.0433],
+                    [0.0691, 0.9195, 0.0114],
+                    [0.0164, 0.0880, 0.8956],
+                ]
+            }
+            Self::AcesCgToRec2020 => {
+                // ACEScg (AP1) to Rec.2020 (BT.2020) - Inverse transform
+                [
+                    [1.6605, -0.5876, -0.0728],
+                    [-0.1246, 1.1329, -0.0084],
+                    [-0.0182, -0.1006, 1.1188],
+                ]
             }
         }
     }

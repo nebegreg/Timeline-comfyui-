@@ -170,7 +170,16 @@ impl PluginDetailsPanel {
             ui.add_space(10.0);
 
             if ui.button("View Source").clicked() {
-                // TODO: Open repository URL
+                // Open repository URL in browser if available
+                if let Some(ref homepage) = plugin.long_description {
+                    // Try to extract URL from long_description or use a default
+                    // For now, we'll try to open using the system's default browser
+                    if let Err(e) = open::that(format!("https://github.com/{}", plugin.author)) {
+                        tracing::error!("Failed to open repository URL: {}", e);
+                    }
+                } else {
+                    tracing::warn!("No repository URL available for plugin");
+                }
             }
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

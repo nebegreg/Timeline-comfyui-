@@ -472,12 +472,63 @@ impl MarketplaceUI {
 
     fn update_plugin(&mut self, plugin_id: String) {
         tracing::info!("Updating plugin: {}", plugin_id);
-        // TODO: Update plugin
+
+        // Updating is essentially re-installing the latest version
+        self.installing = Some(plugin_id.clone());
+
+        if let Some(sender) = &self.command_sender {
+            match sender.send(MarketplaceCommand::InstallPlugin {
+                plugin_id: plugin_id.clone(),
+            }) {
+                Ok(_) => {
+                    tracing::info!("Plugin update command sent for: {}", plugin_id);
+                }
+                Err(e) => {
+                    tracing::error!("Failed to send update command: {}", e);
+                    self.installing = None;
+                    self.connection_status =
+                        ConnectionStatus::Error(format!("Failed to update: {}", e));
+                }
+            }
+        } else {
+            tracing::warn!("Marketplace command sender not initialized");
+            self.installing = None;
+            self.connection_status =
+                ConnectionStatus::Error("Marketplace not initialized".to_string());
+        }
     }
 
     fn show_installed_plugins(&mut self) {
-        // TODO: Show installed plugins panel
         tracing::info!("Showing installed plugins");
+
+        // Clear search filters to show only installed plugins
+        self.search_query.clear();
+        self.selected_category = None;
+        self.selected_type = None;
+        self.current_page = 1;
+
+        // Filter results to show only installed plugins
+        if let Some(results) = &mut self.results {
+            let installed_plugin_list: Vec<MarketplacePlugin> = results
+                .plugins
+                .iter()
+                .filter(|p| self.installed_plugins.contains_key(&p.id))
+                .cloned()
+                .collect();
+
+            self.results = Some(SearchResults {
+                plugins: installed_plugin_list.clone(),
+                total: installed_plugin_list.len() as i64,
+                page: 1,
+                pages: 1,
+            });
+        } else {
+            // If no results loaded yet, just note that we have installed plugins
+            tracing::info!(
+                "Currently {} plugin(s) installed",
+                self.installed_plugins.len()
+            );
+        }
     }
 }
 

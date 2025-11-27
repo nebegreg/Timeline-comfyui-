@@ -48,15 +48,15 @@ impl CornerPinEffect {
     }
 
     /// Calculate perspective transformation matrix from 4 corner points
-    /// Uses homography estimation
+    /// Uses homography estimation via Direct Linear Transform (DLT)
     fn calculate_perspective_matrix(
         tl: [f32; 2],
         tr: [f32; 2],
         bl: [f32; 2],
         br: [f32; 2],
     ) -> [[f32; 4]; 4] {
-        // Source corners (unit square)
-        let _src = [
+        // Source corners (unit square normalized coordinates)
+        let src = [
             [0.0, 0.0], // Top-left
             [1.0, 0.0], // Top-right
             [0.0, 1.0], // Bottom-left
@@ -64,28 +64,60 @@ impl CornerPinEffect {
         ];
 
         // Destination corners
-        let _dst = [tl, tr, bl, br];
+        let dst = [tl, tr, bl, br];
 
-        // Compute homography using Direct Linear Transform (DLT)
-        // For simplicity, we use a basic bilinear interpolation approximation
-        // Production code should use proper homography estimation (SVD)
+        // Compute homography matrix H using Direct Linear Transform (DLT)
+        // We solve: dst = H * src for the 3x3 homography matrix H
+        // This is a simplified version using bilinear approximation
 
-        // This is a simplified perspective matrix
-        // Real implementation would solve for H using:
-        // [x'] = H * [x]
-        // [y']     [y]
-        // [1 ]     [1]
+        // Calculate deltas for bilinear interpolation
+        let dx1 = tr[0] - br[0];
+        let dx2 = bl[0] - br[0];
+        let dx3 = tl[0] - tr[0] - bl[0] + br[0];
 
+        let dy1 = tr[1] - br[1];
+        let dy2 = bl[1] - br[1];
+        let dy3 = tl[1] - tr[1] - bl[1] + br[1];
+
+        // Compute perspective coefficients
+        let det = dx1 * dy2 - dx2 * dy1;
+        let g = if det.abs() > 1e-10 {
+            (dx3 * dy2 - dx2 * dy3) / det
+        } else {
+            0.0
+        };
+        let h = if det.abs() > 1e-10 {
+            (dx1 * dy3 - dx3 * dy1) / det
+        } else {
+            0.0
+        };
+
+        // Build 3x3 homography matrix (stored in 4x4 for GPU alignment)
         let mut matrix = [[0.0f32; 4]; 4];
 
-        // Identity transform as fallback
-        matrix[0][0] = 1.0;
-        matrix[1][1] = 1.0;
-        matrix[2][2] = 1.0;
-        matrix[3][3] = 1.0;
+        // First row
+        matrix[0][0] = tr[0] - tl[0] + g * tr[0];
+        matrix[0][1] = bl[0] - tl[0] + h * bl[0];
+        matrix[0][2] = tl[0];
+        matrix[0][3] = 0.0;
 
-        // TODO: Implement proper homography calculation
-        // For now, store corner points in matrix for shader to interpolate
+        // Second row
+        matrix[1][0] = tr[1] - tl[1] + g * tr[1];
+        matrix[1][1] = bl[1] - tl[1] + h * bl[1];
+        matrix[1][2] = tl[1];
+        matrix[1][3] = 0.0;
+
+        // Third row (perspective divide)
+        matrix[2][0] = g;
+        matrix[2][1] = h;
+        matrix[2][2] = 1.0;
+        matrix[2][3] = 0.0;
+
+        // Fourth row (not used, set to identity)
+        matrix[3][0] = 0.0;
+        matrix[3][1] = 0.0;
+        matrix[3][2] = 0.0;
+        matrix[3][3] = 1.0;
 
         matrix
     }

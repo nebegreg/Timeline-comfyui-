@@ -80,7 +80,18 @@ pub async fn create_plugin(
     // Generate plugin ID
     let id = Uuid::new_v4().to_string();
 
-    // TODO: Save file to storage
+    // Save file to storage
+    let uploads_dir = std::path::Path::new("uploads");
+    std::fs::create_dir_all(uploads_dir)
+        .map_err(|e| ApiError::StorageError(format!("Failed to create uploads directory: {}", e)))?;
+
+    let file_extension = if req.plugin_type == "wasm" { "wasm" } else { "zip" };
+    let file_name = format!("{}_{}.{}", id, file_hash, file_extension);
+    let file_path = uploads_dir.join(&file_name);
+
+    std::fs::write(&file_path, &file_data)
+        .map_err(|e| ApiError::StorageError(format!("Failed to save plugin file: {}", e)))?;
+
     let download_url = format!("/api/plugins/{}/download", id);
 
     let tags = req.tags.join(",");

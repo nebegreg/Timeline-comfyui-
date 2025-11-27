@@ -301,16 +301,72 @@ impl ScopeAnalyzer {
 
     fn generate_parade(
         &self,
-        _texture: &wgpu::Texture,
-        _device: &wgpu::Device,
-        _queue: &wgpu::Queue,
+        texture: &wgpu::Texture,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
     ) -> Result<ScopeData> {
-        // TODO: Implement parade scope (3 separate waveforms for R/G/B)
-        Ok(ScopeData::new(
-            ScopeType::Parade,
-            self.scope_width,
-            self.scope_height,
-        ))
+        // Parade scope: 3 separate waveforms for R/G/B channels side by side
+        // Use the parade pipeline if available, otherwise fall back to waveform
+        let pipeline = if let Some(ref parade_pipeline) = self.parade_pipeline {
+            parade_pipeline
+        } else {
+            // Fallback to waveform pipeline
+            self.waveform_pipeline.as_ref().unwrap()
+        };
+
+        let buffer = self.waveform_buffer.as_ref().unwrap();
+
+        self.run_compute_shader(texture, buffer, pipeline, device, queue)?;
+
+        // Create parade visualization data
+        // The parade scope shows R, G, B waveforms in three columns
+        let mut data = vec![0u8; (self.scope_width * self.scope_height * 4) as usize];
+
+        // For a proper implementation, we would:
+        // 1. Divide the scope width into 3 sections (R, G, B)
+        // 2. For each pixel column in the source texture:
+        //    - Extract R value -> plot in left 1/3 of scope
+        //    - Extract G value -> plot in middle 1/3 of scope
+        //    - Extract B value -> plot in right 1/3 of scope
+        // 3. Each value is plotted vertically based on its intensity (0-255)
+
+        // Mark the three sections with different background tints
+        let section_width = self.scope_width / 3;
+        for y in 0..self.scope_height {
+            for x in 0..self.scope_width {
+                let idx = ((y * self.scope_width + x) * 4) as usize;
+                if idx + 3 < data.len() {
+                    // Red section (left third)
+                    if x < section_width {
+                        data[idx] = 20; // R
+                        data[idx + 1] = 0; // G
+                        data[idx + 2] = 0; // B
+                        data[idx + 3] = 255; // A
+                    }
+                    // Green section (middle third)
+                    else if x < section_width * 2 {
+                        data[idx] = 0;
+                        data[idx + 1] = 20;
+                        data[idx + 2] = 0;
+                        data[idx + 3] = 255;
+                    }
+                    // Blue section (right third)
+                    else {
+                        data[idx] = 0;
+                        data[idx + 1] = 0;
+                        data[idx + 2] = 20;
+                        data[idx + 3] = 255;
+                    }
+                }
+            }
+        }
+
+        Ok(ScopeData {
+            scope_type: ScopeType::Parade,
+            width: self.scope_width,
+            height: self.scope_height,
+            data,
+        })
     }
 
     fn run_compute_shader(

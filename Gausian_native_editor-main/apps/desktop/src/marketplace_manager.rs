@@ -242,8 +242,9 @@ fn run_marketplace_thread(
                 let marketplace = marketplace.clone();
 
                 rt.spawn(async move {
-                    // TODO: Get installed plugins from somewhere
-                    let installed = std::collections::HashMap::new();
+                    // Get installed plugins by scanning the plugins directory
+                    let plugins_dir = std::path::PathBuf::from("plugins");
+                    let installed = get_installed_plugins(&plugins_dir).await.unwrap_or_default();
 
                     match marketplace.check_updates(&installed).await {
                         Ok(updates) => {
@@ -265,4 +266,41 @@ fn run_marketplace_thread(
             }
         }
     }
+}
+
+/// Get installed plugins by scanning the plugins directory
+async fn get_installed_plugins(
+    plugins_dir: &std::path::Path,
+) -> Result<std::collections::HashMap<String, String>, Box<dyn std::error::Error>> {
+    let mut installed = std::collections::HashMap::new();
+
+    if !plugins_dir.exists() {
+        return Ok(installed);
+    }
+
+    let mut entries = tokio::fs::read_dir(plugins_dir).await?;
+    while let Some(entry) = entries.next_entry().await? {
+        if entry.file_type().await?.is_dir() {
+            let manifest_path = entry.path().join("plugin.json");
+            if manifest_path.exists() {
+                match tokio::fs::read_to_string(&manifest_path).await {
+                    Ok(content) => {
+                        if let Ok(manifest) = serde_json::from_str::<serde_json::Value>(&content) {
+                            if let (Some(name), Some(version)) = (
+                                manifest.get("name").and_then(|v| v.as_str()),
+                                manifest.get("version").and_then(|v| v.as_str()),
+                            ) {
+                                installed.insert(name.to_string(), version.to_string());
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to read manifest at {:?}: {}", manifest_path, e);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(installed)
 }
