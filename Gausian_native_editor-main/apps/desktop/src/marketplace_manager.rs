@@ -105,6 +105,11 @@ impl MarketplaceManager {
     pub fn has_responses(&self) -> bool {
         matches!(self.response_rx.try_recv(), Ok(_))
     }
+
+    /// Get a clone of the command sender for UI integration
+    pub fn get_sender(&self) -> Sender<MarketplaceCommand> {
+        self.command_tx.clone()
+    }
 }
 
 /// Background thread that runs async marketplace operations

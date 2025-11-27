@@ -5,6 +5,9 @@ use egui::{Color32, Context, Response, RichText, ScrollArea, TextureHandle, Ui, 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::mpsc::Sender;
+
+use crate::marketplace_manager::{MarketplaceCommand, SearchQuery};
 
 /// Plugin info from marketplace API
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,6 +75,9 @@ pub struct MarketplaceUI {
 
     /// Marketplace server URL
     pub server_url: String,
+
+    /// Command sender to marketplace manager
+    command_sender: Option<Sender<MarketplaceCommand>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -104,7 +110,13 @@ impl MarketplaceUI {
             installing: None,
             connection_status: ConnectionStatus::Disconnected,
             server_url: "http://127.0.0.1:3000".to_string(),
+            command_sender: None,
         }
+    }
+
+    /// Set the command sender for marketplace operations
+    pub fn set_command_sender(&mut self, sender: Sender<MarketplaceCommand>) {
+        self.command_sender = Some(sender);
     }
 
     /// Toggle marketplace panel
@@ -350,32 +362,41 @@ impl MarketplaceUI {
     fn refresh_plugins(&mut self) {
         self.connection_status = ConnectionStatus::Connecting;
 
-        // Build query URL
-        let mut url = format!("{}/api/plugins?page={}&limit=20", self.server_url, self.current_page);
-
-        if !self.search_query.is_empty() {
-            url.push_str(&format!("&q={}", urlencoding::encode(&self.search_query)));
-        }
-
-        if let Some(cat) = &self.selected_category {
-            url.push_str(&format!("&category={}", cat));
-        }
-
-        if let Some(ptype) = &self.selected_type {
-            url.push_str(&format!("&plugin_type={}", ptype));
-        }
-
-        let sort = match self.sort_by {
-            SortMode::Downloads => "downloads",
-            SortMode::Rating => "rating",
-            SortMode::Recent => "recent",
+        // Build search query
+        let query = SearchQuery {
+            query: if self.search_query.is_empty() {
+                None
+            } else {
+                Some(self.search_query.clone())
+            },
+            category: self.selected_category.clone(),
+            plugin_type: self.selected_type.clone(),
+            sort_by: match self.sort_by {
+                SortMode::Downloads => plugin_host::marketplace::SortBy::Downloads,
+                SortMode::Rating => plugin_host::marketplace::SortBy::Rating,
+                SortMode::Recent => plugin_host::marketplace::SortBy::Updated,
+            },
+            page: self.current_page as u32,
+            per_page: 20,
+            free_only: false,
+            tags: vec![],
         };
-        url.push_str(&format!("&sort={}", sort));
 
-        // TODO: Make async HTTP request
-        // For now, simulate with example data
-        self.connection_status = ConnectionStatus::Connected;
-        tracing::info!("Would fetch from: {}", url);
+        // Send command to manager
+        if let Some(sender) = &self.command_sender {
+            match sender.send(MarketplaceCommand::Search(query)) {
+                Ok(_) => {
+                    tracing::info!("Marketplace search command sent");
+                }
+                Err(e) => {
+                    tracing::error!("Failed to send marketplace command: {}", e);
+                    self.connection_status = ConnectionStatus::Error(format!("Failed to send command: {}", e));
+                }
+            }
+        } else {
+            tracing::warn!("Marketplace command sender not initialized");
+            self.connection_status = ConnectionStatus::Error("Marketplace not initialized".to_string());
+        }
     }
 
     fn perform_search(&mut self) {
@@ -387,10 +408,25 @@ impl MarketplaceUI {
         self.installing = Some(plugin_id.clone());
         tracing::info!("Installing plugin: {}", plugin_id);
 
-        // TODO: Download and install plugin
-        // For now, simulate installation
-        self.installed_plugins.insert(plugin_id.clone(), "1.0.0".to_string());
-        self.installing = None;
+        // Send install command to manager
+        if let Some(sender) = &self.command_sender {
+            match sender.send(MarketplaceCommand::InstallPlugin {
+                plugin_id: plugin_id.clone(),
+            }) {
+                Ok(_) => {
+                    tracing::info!("Plugin install command sent for: {}", plugin_id);
+                }
+                Err(e) => {
+                    tracing::error!("Failed to send install command: {}", e);
+                    self.installing = None;
+                    self.connection_status = ConnectionStatus::Error(format!("Failed to install: {}", e));
+                }
+            }
+        } else {
+            tracing::warn!("Marketplace command sender not initialized");
+            self.installing = None;
+            self.connection_status = ConnectionStatus::Error("Marketplace not initialized".to_string());
+        }
     }
 
     fn update_plugin(&mut self, plugin_id: String) {

@@ -467,6 +467,10 @@ pub(super) fn assets_panel(app: &mut App, ctx: &egui::Context) {
                 if ui.button("ComfyUI").clicked() {
                     app.show_comfy_panel = !app.show_comfy_panel;
                 }
+                // Phase 5: Plugin Marketplace
+                if ui.button("🛍️ Plugins").clicked() {
+                    app.marketplace_ui.toggle_panel();
+                }
             });
             let assets = app.assets();
             proxy_jobs_summary(app, ui, &assets);
